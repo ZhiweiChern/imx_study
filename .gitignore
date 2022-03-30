@@ -1,4 +1,5 @@
 *.bin
+*.d
 *.o
 *.elf
 !download_tool/dcd.bin
