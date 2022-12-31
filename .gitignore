@@ -1,4 +1,5 @@
 *.bin
+*.d
 *.o
 *.elf
 !download_tool/dcd.bin
@@ -7,3 +8,4 @@
 *.img
 *.dis
 *.imx
+imxdownload
