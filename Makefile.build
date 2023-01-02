@@ -1,0 +1,131 @@
+# ==========================================================================
+# Building
+# ==========================================================================
+#
+# SPDX-License-Identifier:	GPL-2.0
+#
+
+src := $(obj)
+prefix := .
+$(info obj: $(obj))
+$(info src: $(src))
+$(info srctree:$(srctree))
+
+PHONY := __build
+__build:
+
+# Init all relevant variables used in kbuild files so
+# 1) they have correct type
+# 2) they do not inherit any value from the environment
+obj-y :=
+obj-m :=
+lib-y :=
+lib-m :=
+always :=
+targets :=
+subdir-y :=
+subdir-m :=
+EXTRA_AFLAGS   :=
+EXTRA_CFLAGS   :=
+EXTRA_CPPFLAGS :=
+EXTRA_LDFLAGS  :=
+asflags-y  :=
+ccflags-y  :=
+cppflags-y :=
+ldflags-y  :=
+
+subdir-asflags-y :=
+subdir-ccflags-y :=
+
+# Read auto.conf if it exists, otherwise ignore
+-include include/config/auto.conf
+
+include Kbuild.include
+
+# For backward compatibility check that these variables do not change
+save-cflags := $(CFLAGS)
+
+# The filename Kbuild has precedence over Makefile
+kbuild-dir := $(if $(filter /%,$(src)),$(src),$(srctree)/$(src))
+kbuild-file := $(if $(wildcard $(kbuild-dir)/Kbuild),$(kbuild-dir)/Kbuild,$(kbuild-dir)/Makefile)
+$(info kbuild-dir: $(kbuild-dir))
+include $(kbuild-file)
+
+# Added for U-Boot
+asflags-y  += $(PLATFORM_CPPFLAGS)
+ccflags-y  += $(PLATFORM_CPPFLAGS)
+cppflags-y += $(PLATFORM_CPPFLAGS)
+
+# If the save-* variables changed error out
+ifeq ($(KBUILD_NOPEDANTIC),)
+        ifneq ("$(save-cflags)","$(CFLAGS)")
+                $(error CFLAGS was changed in "$(kbuild-file)". Fix it to use ccflags-y)
+        endif
+endif
+
+include Makefile.lib
+
+ifndef obj
+$(warning kbuild: Makefile.build is included improperly)
+endif
+
+# ===========================================================================
+
+ifneq ($(strip $(lib-y) $(lib-m) $(lib-)),)
+$(info lib.a-mark)
+lib-target := $(obj)/lib.a
+endif
+
+ifneq ($(strip $(obj-y) $(obj-m) $(obj-) $(subdir-m) $(lib-target)),)
+$(info built-in-mark)
+# $(info obj-y:$(obj-y), obj-m:$(obj-m), obj-:$(obj-), subdir-m:$(subdir-m), lib-target:$(lib-target))
+builtin-target := $(obj)/built-in.o
+$(info builtin-target: $(builtin-target))
+endif
+
+modorder-target := $(obj)/modules.order
+
+# We keep a list of all modules in $(MODVERDIR)
+
+$(info KBUILD_BUILTIN: $(KBUILD_BUILTIN))
+$(info $(if $(KBUILD_BUILTIN),$(builtin-target) $(lib-target) $(extra-y)))
+
+__build: $(if $(KBUILD_BUILTIN),$(builtin-target) $(lib-target) $(extra-y)) \
+	 $(if $(KBUILD_MODULES),$(obj-m) $(modorder-target)) \
+	 $(subdir-ym) $(always) test
+	@:
+
+# ========= line 313
+quiet_cmd_as_o_S = AS $(quiet_modtag)  $@
+cmd_as_o_S       = $(CC) $(a_flags) -c -o $@ $<
+
+$(obj)/%.o: $(src)/%.S FORCE
+	$(call if_changed_dep,as_o_S)
+
+# line 348
+#
+# Rule to compile a set of .o files into one .o file
+#
+ifdef builtin-target
+quiet_cmd_link_o_target = LD      $@
+# If the list of objects to link is empty, just create an empty built-in.o
+cmd_link_o_target = $(if $(strip $(obj-y)),\
+		      $(LD) $(ld_flags) -r -o $@ $(filter $(obj-y), $^) \
+		      $(cmd_secanalysis),\
+		      rm -f $@; $(AR) rcs$(KBUILD_ARFLAGS) $@)
+
+$(builtin-target): $(obj-y) FORCE
+	$(call if_changed,link_o_target)
+
+targets += $(builtin-target)
+endif # builtin-target
+
+
+PHONY += test
+test:
+# 	ls
+
+PHONY += FORCE
+FORCE:
+
+.PHONY: $(PHONY)
