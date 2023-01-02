@@ -3,8 +3,6 @@
 #
 # Backward compatibility
 
-$(info Makefile.lib...)
-
 asflags-y  += $(EXTRA_AFLAGS)
 ccflags-y  += $(EXTRA_CFLAGS)
 cppflags-y += $(EXTRA_CPPFLAGS)
