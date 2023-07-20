@@ -4,10 +4,8 @@
 
 // #include "board_init.h"
 
-int board_init(void)
-{
-	return 0;
-}
+extern int board_init(void);
+
 
 /*
  * @description	: main函数

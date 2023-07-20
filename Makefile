@@ -6,6 +6,9 @@ MANUFACT := nxp_repo
 SOC_FAMILY := imx6
 BOARD_NAME := yz_alpha
 
+export ARCH_PATH MANUFACT SOC_FAMILY BOARD_NAME
+
+
 # Beautify output
 # ---------------------------------------------------------------------------
 #
@@ -48,6 +51,25 @@ else
 endif
 
 export quiet Q KBUILD_VERBOSE
+
+# Call a source code checker (by default, "sparse") as part of the
+# C compilation.
+#
+# Use 'make C=1' to enable checking of only re-compiled files.
+# Use 'make C=2' to enable checking of *all* source files, regardless
+# of whether they are re-compiled or not.
+#
+# See the file "Documentation/sparse.txt" for more details, including
+# where to get the "sparse" utility.
+
+ifeq ("$(origin C)", "command line")
+  KBUILD_CHECKSRC = $(C)
+endif
+ifndef KBUILD_CHECKSRC
+  KBUILD_CHECKSRC = 0
+endif
+
+export KBUILD_CHECKSRC
 
 #-------------------------------------------
 HOSTARCH := $(shell uname -m | \
@@ -96,6 +118,7 @@ OBJDUMP		= $(CROSS_COMPILE)objdump
 
 export CROSS_COMPILE AS LD CC CPP AR NM LDR STRIP OBJCOPY OBJDUMP
 
+
 #-------------------------------------------
 srctree := .
 KBUILD_BUILTIN := 1
@@ -131,6 +154,7 @@ c_flags := $(KBUILD_CFLAGS) $(cpp_flags)
 #============================================================
 libs-y :=
 libs-y += init/
+libs-y += soc/$(ARCH_PATH)/
 
 libs-y := $(sort $(libs-y))
 
@@ -141,9 +165,6 @@ rt-boot-alldirs := $(sort $(rt-boot-dirs) $(patsubst %/,%,$(filter %/, $(libs-))
 libs-y := $(patsubst %/, %/built-in.o, $(libs-y))
 
 rt-boot-main := $(libs-y)
-
-head-path := soc/$(ARCH_PATH)/
-head-dirs := $(patsubst %/,%,$(filter %/, $(head-path)))
 
 head-y := soc/$(ARCH_PATH)/start.o
 rt-boot-init := $(head-y)
@@ -194,11 +215,11 @@ rt-boot.lds: FORCE
 $(sort $(rt-boot-init) $(rt-boot-main)): $(rt-boot-dirs)
 	@:
 
-$(rt-boot-dirs): $(head-dirs) tools_basic
+$(rt-boot-dirs): tools_basic
 	$(Q)$(MAKE) $(build)=$@
 
-$(head-dirs): tools_basic
-	$(Q)$(MAKE) $(build)=$@
+# $(head-dirs): tools_basic
+# 	$(Q)$(MAKE) $(build)=$@
 
 # Basic helpers built in scripts/
 PHONY += tools_basic
