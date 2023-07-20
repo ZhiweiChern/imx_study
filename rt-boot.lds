@@ -2,7 +2,7 @@ SECTIONS{
 	. = 0X87800000;
 	.text :
 	{
-		obj/start.o 
+		init/start.o 
 		*(.text)
 	}
 	.rodata ALIGN(4) : {*(.rodata*)}     

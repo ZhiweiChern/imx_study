@@ -1,5 +1,5 @@
 
-$(info start...)
+# $(info start...)
 
 # Beautify output
 # ---------------------------------------------------------------------------
@@ -123,9 +123,78 @@ cpp_flags := $(KBUILD_CPPFLAGS) $(PLATFORM_CPPFLAGS) $(UBOOTINCLUDE) \
 
 c_flags := $(KBUILD_CFLAGS) $(cpp_flags)
 
+#============================================================
+libs-y += init/
+
+libs-y := $(sort $(libs-y))
+
+rt-boot-dirs := $(patsubst %/,%,$(filter %/, $(libs-y)))
+# $(info libs-y: $(libs-y))
+# $(info rt-boot-dirs: $(rt-boot-dirs))
+# 关于 libs-，如果后续使用了 CONFIG_XXX 并且 CONFIG_XXX 没有被配置的话，libs- 会有值
+rt-boot-alldirs := $(sort $(rt-boot-dirs) $(patsubst %/,%,$(filter %/, $(libs-))))
+
+libs-y := $(patsubst %/, %/built-in.o, $(libs-y))
+
+rt-boot-main := $(libs-y)
+
+head-y := init/start.o
+rt-boot-init := $(head-y)
+
+#============================================================
+ALL-y :=
+ALL-y += rt-boot.bin
+
+
+
+
+
+
 PHONY := _all
-_all: tools_basic
-	$(MAKE) $(build)=gpio_int
+_all: rt-boot.bin
+	@:
+
+
+quiet_cmd_objcopy = OBJCOPY $@
+cmd_objcopy = $(OBJCOPY) --gap-fill=0xff $(OBJCOPYFLAGS) \
+	$(OBJCOPYFLAGS_$(@F)) $< $@
+
+rt-boot.bin: rt-boot FORCE
+	$(call if_changed,objcopy)
+	$(call DO_STATIC_RELA,$<,$@,$(CONFIG_SYS_TEXT_BASE))
+	$(BOARD_SIZE_CHECK)
+
+# Rule to link rt-boot
+# May be overridden by arch/$(ARCH)/config.mk
+quiet_cmd_rt-boot__ ?= LD      $@
+      cmd_rt-boot__ ?= $(LD) $(LDFLAGS) $(LDFLAGS_rt-boot) -o $@ \
+      -T rt-boot.lds $(rt-boot-init)                             \
+      --start-group $(rt-boot-main) --end-group
+#      $(PLATFORM_LIBS) -Map rt-boot.map
+
+ifeq (1, 0)
+quiet_cmd_smap = GEN     common/system_map.o
+cmd_smap = \
+	smap=`$(call SYSTEM_MAP,u-boot) | \
+		awk '$$2 ~ /[tTwW]/ {printf $$1 $$3 "\\\\000"}'` ; \
+	$(CC) $(c_flags) -DSYSTEM_MAP="\"$${smap}\"" \
+		-c $(srctree)/common/system_map.c -o common/system_map.o
+endif
+
+# rt-boot: $(rt-boot-init) $(rt-boot-main) rt-boot.lds FORCE
+rt-boot: $(rt-boot-init) $(rt-boot-main) FORCE
+	$(call if_changed,rt-boot__)
+
+#	$(call cmd,smap)
+#	$(call cmd,u-boot__) common/system_map.o
+
+
+
+$(sort $(rt-boot-init) $(rt-boot-main)): $(rt-boot-dirs)
+	@:
+
+$(rt-boot-dirs): tools_basic
+	$(Q)$(MAKE) $(build)=$@
 
 # Basic helpers built in scripts/
 PHONY += tools_basic
@@ -133,10 +202,46 @@ tools_basic:
 	$(Q)$(MAKE) $(build)=tools/basic
 	$(Q)rm -f .tmp_quiet_recordmcount
 
-# PHONY += $(u-boot-dirs)
-# $(u-boot-dirs): prepare scripts
-# 	@echo here....
-# 	$(Q)$(MAKE) $(build)=$@
+#============================================================
+###
+# Cleaning is done on three levels.
+# make clean     Delete most generated files
+#                Leave enough to build external modules
+# make mrproper  Delete the current configuration, and all generated files
+# make distclean Remove editor backup files, patch leftover files and the like
+
+# Directories & files removed with 'make clean'
+CLEAN_DIRS  :=
+CLEAN_FILES :=
+
+# Directories & files removed with 'make mrproper'
+MRPROPER_DIRS  :=
+MRPROPER_FILES :=
+
+# clean - Delete most, but leave enough to build external modules
+#
+clean: rm-dirs  := $(CLEAN_DIRS)
+clean: rm-files := $(CLEAN_FILES)
+
+clean-dirs	:= $(foreach f,$(bulid-alldirs),$(if $(wildcard $(srctree)/$f/Makefile),$f))
+clean-dirs      := $(addprefix _clean_, $(clean-dirs))
+
+PHONY += $(clean-dirs) clean
+$(clean-dirs):
+	$(Q)$(MAKE) $(clean)=$(patsubst _clean_%,%,$@)
+
+# TODO: Do not use *.cfgtmp
+clean: $(clean-dirs)
+	$(call cmd,rmdirs)
+	$(call cmd,rmfiles)
+	@find $(if $(KBUILD_EXTMOD), $(KBUILD_EXTMOD), .) $(RCS_FIND_IGNORE) \
+		\( -name '*.[oas]' -o -name '*.ko' -o -name '.*.cmd' \
+		-o -name '*.ko.*' -o -name '*.su' -o -name '*.cfgtmp' \
+		-o -name '.*.d' -o -name '.*.tmp' -o -name '*.mod.c' \
+		-o -name '*.symtypes' -o -name 'modules.order' \
+		-o -name modules.builtin -o -name '.tmp_*.o.*' \
+		-o -name '*.gcno' \) -type f -print | xargs rm -f
+#============================================================
 
 PHONY += FORCE
 FORCE:
