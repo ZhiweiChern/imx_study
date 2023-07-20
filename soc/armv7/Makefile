@@ -1,0 +1,2 @@
+
+extra-y	:= start.o

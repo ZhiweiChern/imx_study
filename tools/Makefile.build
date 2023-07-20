@@ -78,7 +78,7 @@ endif
 
 # ===========================================================================
 
-$(info lib-y: $(lib-y))
+# $(info lib-y: $(lib-y))
 ifneq ($(strip $(lib-y) $(lib-m) $(lib-)),)
 # $(info lib.a-mark)
 lib-target := $(obj)/lib.a

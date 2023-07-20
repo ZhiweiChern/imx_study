@@ -1,6 +1,11 @@
 
 # $(info start...)
 
+ARCH_PATH := armv7
+MANUFACT := nxp_repo
+SOC_FAMILY := imx6
+BOARD_NAME := yz_alpha
+
 # Beautify output
 # ---------------------------------------------------------------------------
 #
@@ -124,13 +129,12 @@ cpp_flags := $(KBUILD_CPPFLAGS) $(PLATFORM_CPPFLAGS) $(UBOOTINCLUDE) \
 c_flags := $(KBUILD_CFLAGS) $(cpp_flags)
 
 #============================================================
+libs-y :=
 libs-y += init/
 
 libs-y := $(sort $(libs-y))
 
 rt-boot-dirs := $(patsubst %/,%,$(filter %/, $(libs-y)))
-# $(info libs-y: $(libs-y))
-# $(info rt-boot-dirs: $(rt-boot-dirs))
 # 关于 libs-，如果后续使用了 CONFIG_XXX 并且 CONFIG_XXX 没有被配置的话，libs- 会有值
 rt-boot-alldirs := $(sort $(rt-boot-dirs) $(patsubst %/,%,$(filter %/, $(libs-))))
 
@@ -138,7 +142,10 @@ libs-y := $(patsubst %/, %/built-in.o, $(libs-y))
 
 rt-boot-main := $(libs-y)
 
-head-y := init/start.o
+head-path := soc/$(ARCH_PATH)/
+head-dirs := $(patsubst %/,%,$(filter %/, $(head-path)))
+
+head-y := soc/$(ARCH_PATH)/start.o
 rt-boot-init := $(head-y)
 
 #============================================================
@@ -146,14 +153,9 @@ ALL-y :=
 ALL-y += rt-boot.bin
 
 
-
-
-
-
 PHONY := _all
-_all: rt-boot.bin
+_all: $(ALL-y)
 	@:
-
 
 quiet_cmd_objcopy = OBJCOPY $@
 cmd_objcopy = $(OBJCOPY) --gap-fill=0xff $(OBJCOPYFLAGS) \
@@ -181,19 +183,21 @@ cmd_smap = \
 		-c $(srctree)/common/system_map.c -o common/system_map.o
 endif
 
-# rt-boot: $(rt-boot-init) $(rt-boot-main) rt-boot.lds FORCE
-rt-boot: $(rt-boot-init) $(rt-boot-main) FORCE
+rt-boot: $(rt-boot-init) $(rt-boot-main) rt-boot.lds FORCE
 	$(call if_changed,rt-boot__)
-
 #	$(call cmd,smap)
 #	$(call cmd,u-boot__) common/system_map.o
 
-
+rt-boot.lds: FORCE
+	cp soc/$(ARCH_PATH)/rt-boot.lds ./
 
 $(sort $(rt-boot-init) $(rt-boot-main)): $(rt-boot-dirs)
 	@:
 
-$(rt-boot-dirs): tools_basic
+$(rt-boot-dirs): $(head-dirs) tools_basic
+	$(Q)$(MAKE) $(build)=$@
+
+$(head-dirs): tools_basic
 	$(Q)$(MAKE) $(build)=$@
 
 # Basic helpers built in scripts/

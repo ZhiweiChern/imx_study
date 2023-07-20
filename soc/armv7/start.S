@@ -18,6 +18,7 @@
  */
 _start:
     ldr pc, =Reset_Handler		/* 复位中断 					*/	
+#if 0
     ldr pc, =Undefined_Handler	/* 未定义中断 					*/
     ldr pc, =SVC_Handler		/* SVC(Supervisor)中断 		*/
     ldr pc, =PrefAbort_Handler	/* 预取终止中断 					*/
@@ -28,6 +29,7 @@ _start:
     /* 这个和 M 核的做法有点区别 */
     /* 中断到来时，PC 指针会自动指向固定的偏移；然后运行的就是预定的指令，预定的指令是让 PC 发生强制跳转 */
     /* 看完这个写法，对 M 核的 DCD 的命令有些不理解了啊 */
+#endif
 
 /* 复位中断 */	
 Reset_Handler:
@@ -127,7 +129,7 @@ IRQ_Handler:
     cps #0x13					/* 进入SVC模式，允许其他中断再次进去 */
 	
 	push {lr}					/* 保存SVC模式的lr寄存器 */
-	ldr r2, =system_irqhandler	/* 加载C语言中断处理函数到r2寄存器中*/
+	// ldr r2, =system_irqhandler	/* 加载C语言中断处理函数到r2寄存器中*/
 	blx r2						/* 运行C语言中断处理函数，带有一个参数，保存在R0寄存器中 */
 
 	pop {lr}					/* 执行完C语言中断服务函数，lr出栈 */
