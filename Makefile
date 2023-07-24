@@ -128,42 +128,69 @@ MAKEFLAGS += --no-print-directory
 
 include tools/Kbuild.include
 
+KBUILD_AFLAGS := -D__ASSEMBLY__
+KBUILD_AFLAGS += -g
+KBUILD_AFLAGS += $(KAFLAGS)
+
 KBUILD_CFLAGS   := -Wall -Wstrict-prototypes \
 		   -Wno-format-security \
 		   -fno-builtin -ffreestanding
 # KBUILD_CFLAGS	+= -O2
-KBUILD_CFLAGS	+= -O0
+KBUILD_CFLAGS += -O0
 KBUILD_CFLAGS += $(call cc-option,-fno-stack-protector)
 KBUILD_CFLAGS += $(call cc-option,-fno-delete-null-pointer-checks)
-KBUILD_CFLAGS	+= -g
-KBUILD_CFLAGS += -fstack-usage
+KBUILD_CFLAGS += -g
+export KBUILD_CFLAGS KBUILD_AFLAGS
+
+# KBUILD_CFLAGS += -fstack-usage
 KBUILD_CFLAGS += $(call cc-option,-Wno-format-nonliteral)
 # Prohibit date/time macros, which would make the build non-deterministic
-KBUILD_CFLAGS   += $(call cc-option,-Werror=date-time)
+KBUILD_CFLAGS += $(call cc-option,-Werror=date-time)
+
+# 用户可以通过 KCFLAGS 添加加额外的编译选项
 KBUILD_CFLAGS += $(KCFLAGS)
 
-KBUILD_CPPFLAGS := -D__KERNEL__ -D__UBOOT__
-# 用户想加编译选项可以通过 KCPPFLAGS
+KBUILD_CPPFLAGS := -D__KERNEL__ -D__RTBOOT__
+# 用户可以通过 KCPPFLAGS 添加加额外的编译选项
 KBUILD_CPPFLAGS += $(KCPPFLAGS)
+
+inc-y :=
+-include $(srctree)/soc/$(ARCH_PATH)/include.mk
+inc-y := $(sort $(inc-y))
+inc-y := $(patsubst %,-I%, $(inc-y))
+
+# Use RTBOOTINCLUDE when you must reference the include/ directory.
+# Needed to be compatible with the O= option
+RTBOOTINCLUDE :=  -I$(srctree) $(inc-y)
+
+NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)
+
 # PLATFORM_CPPFLAGS 这个是为不同平台准备的接口，不同的平台可以差异化编译选项
-cpp_flags := $(KBUILD_CPPFLAGS) $(PLATFORM_CPPFLAGS) $(UBOOTINCLUDE) \
+cpp_flags := $(KBUILD_CPPFLAGS) $(PLATFORM_CPPFLAGS) $(RTBOOTINCLUDE) \
 							$(NOSTDINC_FLAGS)
 
 c_flags := $(KBUILD_CFLAGS) $(cpp_flags)
 
+export KBUILD_CPPFLAGS NOSTDINC_FLAGS RTBOOTINCLUDE
+
+#   OBJCOPYFLAGS LDFLAGS
+
 #============================================================
+soc-y :=
+soc-y += soc/$(ARCH_PATH)/
+soc-y := $(sort $(soc-y))
+soc-dirs := $(patsubst %/,%,$(filter %/, $(soc-y)))
+soc-y := $(patsubst %/, %/built-in.o, $(soc-y))
+rt-boot-soc := $(soc-y)
+
 libs-y :=
 libs-y += init/
-libs-y += soc/$(ARCH_PATH)/
-
 libs-y := $(sort $(libs-y))
-
 rt-boot-dirs := $(patsubst %/,%,$(filter %/, $(libs-y)))
 # 关于 libs-，如果后续使用了 CONFIG_XXX 并且 CONFIG_XXX 没有被配置的话，libs- 会有值
 rt-boot-alldirs := $(sort $(rt-boot-dirs) $(patsubst %/,%,$(filter %/, $(libs-))))
 
 libs-y := $(patsubst %/, %/built-in.o, $(libs-y))
-
 rt-boot-main := $(libs-y)
 
 head-y := soc/$(ARCH_PATH)/start.o
@@ -192,7 +219,7 @@ rt-boot.bin: rt-boot FORCE
 quiet_cmd_rt-boot__ ?= LD      $@
       cmd_rt-boot__ ?= $(LD) $(LDFLAGS) $(LDFLAGS_rt-boot) -o $@ \
       -T rt-boot.lds $(rt-boot-init)                             \
-      --start-group $(rt-boot-main) --end-group
+      --start-group $(rt-boot-soc) $(rt-boot-main) --end-group
 #      $(PLATFORM_LIBS) -Map rt-boot.map
 
 ifeq (1, 0)
@@ -215,7 +242,13 @@ rt-boot.lds: FORCE
 $(sort $(rt-boot-init) $(rt-boot-main)): $(rt-boot-dirs)
 	@:
 
-$(rt-boot-dirs): tools_basic
+$(rt-boot-dirs): $(rt-boot-soc)
+	$(Q)$(MAKE) $(build)=$@
+
+$(rt-boot-soc): $(soc-dirs)
+	@:
+
+$(soc-dirs): tools_basic
 	$(Q)$(MAKE) $(build)=$@
 
 # $(head-dirs): tools_basic

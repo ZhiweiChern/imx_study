@@ -9,6 +9,7 @@ src := $(obj)
 prefix := .
 # $(info Makefile.build - obj: $(obj))
 
+
 PHONY := __build
 __build:
 
@@ -50,6 +51,11 @@ kbuild-file := $(if $(wildcard $(kbuild-dir)/Kbuild),$(kbuild-dir)/Kbuild,$(kbui
 # $(info kbuild-dir: $(kbuild-dir))
 # $(info kbuild-file: $(kbuild-file))
 include $(kbuild-file)
+
+# Added for RT-Boot
+asflags-y  += $(PLATFORM_CPPFLAGS)
+ccflags-y  += $(PLATFORM_CPPFLAGS)
+cppflags-y += $(PLATFORM_CPPFLAGS)
 
 # If the save-* variables changed error out
 ifeq ($(KBUILD_NOPEDANTIC),)

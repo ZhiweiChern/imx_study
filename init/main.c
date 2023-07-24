@@ -2,9 +2,7 @@
 
 **************************************************************/
 
-// #include "board_init.h"
-
-extern int board_init(void);
+#include "board_init.h"
 
 
 /*
@@ -16,7 +14,7 @@ int main(void)
 {
 	int ret = board_init();
 
-	while (1);
+	while (ret);
 
 	return 0;
 }
