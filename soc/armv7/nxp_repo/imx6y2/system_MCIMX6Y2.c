@@ -135,35 +135,35 @@ extern void SDMA_DriverIRQHandler (uint32_t giccIar, void *userParam);
 #pragma weak USDHC2_DriverIRQHandler=defaultIrqHandler
 #pragma weak SDMA_DriverIRQHandler=defaultIrqHandler
 #elif defined(__GNUC__)
-void CAN1_DriverIRQHandler() __attribute__((weak, alias("defaultIrqHandler")));
-void CAN2_DriverIRQHandler() __attribute__((weak, alias("defaultIrqHandler")));
-void ECSPI1_DriverIRQHandler() __attribute__((weak, alias("defaultIrqHandler")));
-void ECSPI2_DriverIRQHandler() __attribute__((weak, alias("defaultIrqHandler")));
-void ECSPI3_DriverIRQHandler() __attribute__((weak, alias("defaultIrqHandler")));
-void ECSPI4_DriverIRQHandler() __attribute__((weak, alias("defaultIrqHandler")));
-void ENET1_DriverIRQHandler() __attribute__((weak, alias("defaultIrqHandler")));
-void ENET2_DriverIRQHandler() __attribute__((weak, alias("defaultIrqHandler")));
-void ENET1_Driver1588IRQHandler() __attribute__((weak, alias("defaultIrqHandler")));
-void ENET2_Driver1588IRQHandler() __attribute__((weak, alias("defaultIrqHandler")));
-void I2C1_DriverIRQHandler() __attribute__((weak, alias("defaultIrqHandler")));
-void I2C2_DriverIRQHandler() __attribute__((weak, alias("defaultIrqHandler")));
-void I2C3_DriverIRQHandler() __attribute__((weak, alias("defaultIrqHandler")));
-void I2C4_DriverIRQHandler() __attribute__((weak, alias("defaultIrqHandler")));
-void I2S1_DriverIRQHandler() __attribute__((weak, alias("defaultIrqHandler")));
-void I2S2_DriverIRQHandler() __attribute__((weak, alias("defaultIrqHandler")));
-void I2S3_Tx_DriverIRQHandler() __attribute__((weak, alias("defaultIrqHandler")));
-void I2S3_Rx_DriverIRQHandler() __attribute__((weak, alias("defaultIrqHandler")));
-void UART1_DriverIRQHandler() __attribute__((weak, alias("defaultIrqHandler")));
-void UART2_DriverIRQHandler() __attribute__((weak, alias("defaultIrqHandler")));
-void UART3_DriverIRQHandler() __attribute__((weak, alias("defaultIrqHandler")));
-void UART4_DriverIRQHandler() __attribute__((weak, alias("defaultIrqHandler")));
-void UART5_DriverIRQHandler() __attribute__((weak, alias("defaultIrqHandler")));
-void UART6_DriverIRQHandler() __attribute__((weak, alias("defaultIrqHandler")));
-void UART7_DriverIRQHandler() __attribute__((weak, alias("defaultIrqHandler")));
-void UART8_DriverIRQHandler() __attribute__((weak, alias("defaultIrqHandler")));
-void USDHC1_DriverIRQHandler() __attribute__((weak, alias("defaultIrqHandler")));
-void USDHC2_DriverIRQHandler() __attribute__((weak, alias("defaultIrqHandler")));
-void SDMA_DriverIRQHandler() __attribute__((weak, alias("defaultIrqHandler")));
+void CAN1_DriverIRQHandler(uint32_t giccIar, void *userParam) __attribute__((weak, alias("defaultIrqHandler")));
+void CAN2_DriverIRQHandler(uint32_t giccIar, void *userParam) __attribute__((weak, alias("defaultIrqHandler")));
+void ECSPI1_DriverIRQHandler(uint32_t giccIar, void *userParam) __attribute__((weak, alias("defaultIrqHandler")));
+void ECSPI2_DriverIRQHandler(uint32_t giccIar, void *userParam) __attribute__((weak, alias("defaultIrqHandler")));
+void ECSPI3_DriverIRQHandler(uint32_t giccIar, void *userParam) __attribute__((weak, alias("defaultIrqHandler")));
+void ECSPI4_DriverIRQHandler(uint32_t giccIar, void *userParam) __attribute__((weak, alias("defaultIrqHandler")));
+void ENET1_DriverIRQHandler(uint32_t giccIar, void *userParam) __attribute__((weak, alias("defaultIrqHandler")));
+void ENET2_DriverIRQHandler(uint32_t giccIar, void *userParam) __attribute__((weak, alias("defaultIrqHandler")));
+void ENET1_Driver1588IRQHandler(uint32_t giccIar, void *userParam) __attribute__((weak, alias("defaultIrqHandler")));
+void ENET2_Driver1588IRQHandler(uint32_t giccIar, void *userParam) __attribute__((weak, alias("defaultIrqHandler")));
+void I2C1_DriverIRQHandler(uint32_t giccIar, void *userParam) __attribute__((weak, alias("defaultIrqHandler")));
+void I2C2_DriverIRQHandler(uint32_t giccIar, void *userParam) __attribute__((weak, alias("defaultIrqHandler")));
+void I2C3_DriverIRQHandler(uint32_t giccIar, void *userParam) __attribute__((weak, alias("defaultIrqHandler")));
+void I2C4_DriverIRQHandler(uint32_t giccIar, void *userParam) __attribute__((weak, alias("defaultIrqHandler")));
+void I2S1_DriverIRQHandler(uint32_t giccIar, void *userParam) __attribute__((weak, alias("defaultIrqHandler")));
+void I2S2_DriverIRQHandler(uint32_t giccIar, void *userParam) __attribute__((weak, alias("defaultIrqHandler")));
+void I2S3_Tx_DriverIRQHandler(uint32_t giccIar, void *userParam) __attribute__((weak, alias("defaultIrqHandler")));
+void I2S3_Rx_DriverIRQHandler(uint32_t giccIar, void *userParam) __attribute__((weak, alias("defaultIrqHandler")));
+void UART1_DriverIRQHandler(uint32_t giccIar, void *userParam) __attribute__((weak, alias("defaultIrqHandler")));
+void UART2_DriverIRQHandler(uint32_t giccIar, void *userParam) __attribute__((weak, alias("defaultIrqHandler")));
+void UART3_DriverIRQHandler(uint32_t giccIar, void *userParam) __attribute__((weak, alias("defaultIrqHandler")));
+void UART4_DriverIRQHandler(uint32_t giccIar, void *userParam) __attribute__((weak, alias("defaultIrqHandler")));
+void UART5_DriverIRQHandler(uint32_t giccIar, void *userParam) __attribute__((weak, alias("defaultIrqHandler")));
+void UART6_DriverIRQHandler(uint32_t giccIar, void *userParam) __attribute__((weak, alias("defaultIrqHandler")));
+void UART7_DriverIRQHandler(uint32_t giccIar, void *userParam) __attribute__((weak, alias("defaultIrqHandler")));
+void UART8_DriverIRQHandler(uint32_t giccIar, void *userParam) __attribute__((weak, alias("defaultIrqHandler")));
+void USDHC1_DriverIRQHandler(uint32_t giccIar, void *userParam) __attribute__((weak, alias("defaultIrqHandler")));
+void USDHC2_DriverIRQHandler(uint32_t giccIar, void *userParam) __attribute__((weak, alias("defaultIrqHandler")));
+void SDMA_DriverIRQHandler(uint32_t giccIar, void *userParam) __attribute__((weak, alias("defaultIrqHandler")));
 #else
   #error Not supported compiler type
 #endif
@@ -217,7 +217,7 @@ void SystemInit (void) {
 
   /* Set vector base address */
   GIC_Init();
-  __set_VBAR((uint32_t)__VECTOR_TABLE);
+  __set_VBAR((uint32_t)0x87800000);
 
 #if ((__FPU_PRESENT == 1) && (__FPU_USED == 1))
   cpacr = __get_CPACR();

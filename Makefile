@@ -3,7 +3,7 @@
 
 ARCH_PATH := armv7
 MANUFACT := nxp_repo
-SOC_FAMILY := imx6
+SOC_FAMILY := imx6y2
 BOARD_NAME := yz_alpha
 
 export ARCH_PATH MANUFACT SOC_FAMILY BOARD_NAME
@@ -130,6 +130,9 @@ include tools/Kbuild.include
 
 KBUILD_AFLAGS := -D__ASSEMBLY__
 KBUILD_AFLAGS += -g
+
+KBUILD_AFLAGS += -mfloat-abi=hard -mfpu=vfpv4
+
 KBUILD_AFLAGS += $(KAFLAGS)
 
 KBUILD_CFLAGS   := -Wall -Wstrict-prototypes \
@@ -146,11 +149,15 @@ export KBUILD_CFLAGS KBUILD_AFLAGS
 KBUILD_CFLAGS += $(call cc-option,-Wno-format-nonliteral)
 # Prohibit date/time macros, which would make the build non-deterministic
 KBUILD_CFLAGS += $(call cc-option,-Werror=date-time)
+# KBUILD_CFLAGS += -nostdlib
+KBUILD_CFLAGS += -mfloat-abi=hard -mfpu=vfpv4
 
 # 用户可以通过 KCFLAGS 添加加额外的编译选项
 KBUILD_CFLAGS += $(KCFLAGS)
 
 KBUILD_CPPFLAGS := -D__KERNEL__ -D__RTBOOT__
+
+KBUILD_CPPFLAGS += -mfloat-abi=hard -mfpu=vfpv4
 # 用户可以通过 KCPPFLAGS 添加加额外的编译选项
 KBUILD_CPPFLAGS += $(KCPPFLAGS)
 
@@ -164,13 +171,16 @@ inc-y := $(patsubst %,-I%, $(inc-y))
 RTBOOTINCLUDE :=  -I$(srctree) $(inc-y)
 
 # NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)
-NOSTDINC_FLAGS += -isystem $(shell $(CC) -print-file-name=include)
+# NOSTDINC_FLAGS += -isystem $(shell $(CC) -print-file-name=include)
 
 # PLATFORM_CPPFLAGS 这个是为不同平台准备的接口，不同的平台可以差异化编译选项
 cpp_flags := $(KBUILD_CPPFLAGS) $(PLATFORM_CPPFLAGS) $(RTBOOTINCLUDE) \
 							$(NOSTDINC_FLAGS)
 
 c_flags := $(KBUILD_CFLAGS) $(cpp_flags)
+
+# LDFLAGS += -lgcc -static -L /home/zhwchen/bin/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf/lib/gcc/arm-linux-gnueabihf/7.5.0/
+# LDFLAGS += /home/zhwchen/bin/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf/bin/../lib/gcc/arm-linux-gnueabihf/7.5.0/libgcc.a
 
 export KBUILD_CPPFLAGS NOSTDINC_FLAGS RTBOOTINCLUDE OBJCOPYFLAGS LDFLAGS
 
@@ -196,6 +206,17 @@ rt-boot-main := $(libs-y)
 head-y := soc/$(ARCH_PATH)/start.o
 rt-boot-init := $(head-y)
 
+# Add GCC lib
+# ifeq ($(CONFIG_USE_PRIVATE_LIBGCC),y)
+# PLATFORM_LIBGCC = arch/$(ARCH)/lib/lib.a
+# else
+PLATFORM_LIBGCC := -L $(shell dirname `$(CC) $(c_flags) -print-libgcc-file-name`) -lgcc
+# endif
+PLATFORM_LIBS += $(PLATFORM_LIBGCC)
+export PLATFORM_LIBS
+export PLATFORM_LIBGCC
+
+
 #============================================================
 ALL-y :=
 ALL-y += rt-boot.bin
@@ -220,8 +241,8 @@ rt-boot.bin: rt-boot FORCE
 quiet_cmd_rt-boot__ ?= LD      $@
       cmd_rt-boot__ ?= $(LD) $(LDFLAGS) $(LDFLAGS_rt-boot) -o $@ \
       -T rt-boot.lds $(rt-boot-init)                             \
-      --start-group $(rt-boot-soc) $(rt-boot-main) --end-group
-#      $(PLATFORM_LIBS) -Map rt-boot.map
+      --start-group $(rt-boot-soc) $(rt-boot-main) --end-group $(PLATFORM_LIBS)
+#   -Map rt-boot.map
 
 ifeq (1, 0)
 quiet_cmd_smap = GEN     common/system_map.o

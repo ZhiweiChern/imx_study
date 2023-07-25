@@ -6,12 +6,14 @@
 
 int board_init(void)
 {
+#if 0
 	volatile int a = 0;
 	a++;
-#if 0
 	unsigned char state = OFF;
+#endif
 
-	int_init(); 		/* 初始化中断(一定要最先调用！) */
+#if 0
+	int_init();
 	imx6u_clkinit();	/* 初始化系统时钟 			*/
 	clk_enable();		/* 使能所有的时钟 			*/
 	led_init();			/* 初始化led 			*/

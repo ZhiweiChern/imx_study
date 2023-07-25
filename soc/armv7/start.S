@@ -18,7 +18,7 @@
  */
 _start:
     ldr pc, =Reset_Handler		/* 复位中断 					*/	
-#if 0
+#if 1
     ldr pc, =Undefined_Handler	/* 未定义中断 					*/
     ldr pc, =SVC_Handler		/* SVC(Supervisor)中断 		*/
     ldr pc, =PrefAbort_Handler	/* 预取终止中断 					*/
@@ -72,6 +72,9 @@ Reset_Handler:
     orr r0, r0, #0x13 	/* r0或上0x13,表示使用SVC模式					*/
     msr cpsr, r0		/* 将r0 的数据写入到cpsr_c中 					*/
     ldr sp, =0x80200000	/* 设置SVC模式下的栈首地址为0X80200000,大小为2MB */
+
+    ldr     r0,=SystemInit
+    blx     r0
 
     cpsie i				/* 打开全局中断 */
 
@@ -151,3 +154,8 @@ FIQ_Handler:
 
 	ldr r0, =FIQ_Handler	
 	bx r0									
+
+.globl raise
+raise :
+     nop
+     mov pc, lr
