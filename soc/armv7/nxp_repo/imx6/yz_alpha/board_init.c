@@ -2,6 +2,8 @@
 
 **************************************************************/
 
+#include "MCIMX6Y2.h"
+
 int board_init(void)
 {
 	volatile int a = 0;

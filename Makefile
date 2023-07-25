@@ -163,7 +163,8 @@ inc-y := $(patsubst %,-I%, $(inc-y))
 # Needed to be compatible with the O= option
 RTBOOTINCLUDE :=  -I$(srctree) $(inc-y)
 
-NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)
+# NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)
+NOSTDINC_FLAGS += -isystem $(shell $(CC) -print-file-name=include)
 
 # PLATFORM_CPPFLAGS 这个是为不同平台准备的接口，不同的平台可以差异化编译选项
 cpp_flags := $(KBUILD_CPPFLAGS) $(PLATFORM_CPPFLAGS) $(RTBOOTINCLUDE) \
@@ -171,9 +172,8 @@ cpp_flags := $(KBUILD_CPPFLAGS) $(PLATFORM_CPPFLAGS) $(RTBOOTINCLUDE) \
 
 c_flags := $(KBUILD_CFLAGS) $(cpp_flags)
 
-export KBUILD_CPPFLAGS NOSTDINC_FLAGS RTBOOTINCLUDE
+export KBUILD_CPPFLAGS NOSTDINC_FLAGS RTBOOTINCLUDE OBJCOPYFLAGS LDFLAGS
 
-#   OBJCOPYFLAGS LDFLAGS
 
 #============================================================
 soc-y :=
@@ -207,6 +207,7 @@ _all: $(ALL-y)
 
 quiet_cmd_objcopy = OBJCOPY $@
 cmd_objcopy = $(OBJCOPY) --gap-fill=0xff $(OBJCOPYFLAGS) \
+	-O binary \
 	$(OBJCOPYFLAGS_$(@F)) $< $@
 
 rt-boot.bin: rt-boot FORCE
@@ -261,6 +262,12 @@ tools_basic:
 	$(Q)rm -f .tmp_quiet_recordmcount
 
 #============================================================
+quiet_cmd_rmdirs = $(if $(wildcard $(rm-dirs)),CLEAN   $(wildcard $(rm-dirs)))
+      cmd_rmdirs = rm -rf $(rm-dirs)
+
+quiet_cmd_rmfiles = $(if $(wildcard $(rm-files)),CLEAN   $(wildcard $(rm-files)))
+      cmd_rmfiles = rm -f $(rm-files)
+
 ###
 # Cleaning is done on three levels.
 # make clean     Delete most generated files
@@ -270,7 +277,7 @@ tools_basic:
 
 # Directories & files removed with 'make clean'
 CLEAN_DIRS  :=
-CLEAN_FILES :=
+CLEAN_FILES := rt-boot rt-boot.bin rt-boot.lds system.map
 
 # Directories & files removed with 'make mrproper'
 MRPROPER_DIRS  :=
