@@ -105,8 +105,8 @@ export CONFIG_SHELL HOSTCC HOSTCXX HOSTCFLAGS HOSTCXXFLAGS
 CROSS_COMPILE := arm-linux-gnueabihf-
 
 AS		= $(CROSS_COMPILE)as
-LD		= $(CROSS_COMPILE)ld
-# LD		= $(CROSS_COMPILE)ld.bfd
+# LD		= $(CROSS_COMPILE)ld
+LD		= $(CROSS_COMPILE)ld.bfd
 CC		= $(CROSS_COMPILE)gcc
 CPP		= $(CC) -E
 AR		= $(CROSS_COMPILE)ar
@@ -149,7 +149,7 @@ export KBUILD_CFLAGS KBUILD_AFLAGS
 KBUILD_CFLAGS += $(call cc-option,-Wno-format-nonliteral)
 # Prohibit date/time macros, which would make the build non-deterministic
 KBUILD_CFLAGS += $(call cc-option,-Werror=date-time)
-# KBUILD_CFLAGS += -nostdlib
+KBUILD_CFLAGS += -nostdlib
 KBUILD_CFLAGS += -mfloat-abi=hard -mfpu=vfpv4
 
 # 用户可以通过 KCFLAGS 添加加额外的编译选项
@@ -170,7 +170,15 @@ inc-y := $(patsubst %,-I%, $(inc-y))
 # Needed to be compatible with the O= option
 RTBOOTINCLUDE :=  -I$(srctree) $(inc-y)
 
-# NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)
+SYSROOT = $(shell $(CC)  -print-sysroot)
+$(info SYSROOT: $(SYSROOT))
+SYSROOT_INC = $(SYSROOT)/usr/include
+SYSROOT_LIBC = $(SYSROOT)/usr/lib
+
+NOSTDINC_FLAGS += -nostdinc -isystem $(SYSROOT_INC) -isystem $(shell $(CC) -print-file-name=include)
+# -isystem /home/zhwchen/bin/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf/arm-linux-gnueabihf/libc/usr/include
+# -isystem /home/zhwchen/bin/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf/lib/gcc/arm-linux-gnueabihf/7.5.0/include
+
 # NOSTDINC_FLAGS += -isystem $(shell $(CC) -print-file-name=include)
 
 # PLATFORM_CPPFLAGS 这个是为不同平台准备的接口，不同的平台可以差异化编译选项
@@ -179,22 +187,19 @@ cpp_flags := $(KBUILD_CPPFLAGS) $(PLATFORM_CPPFLAGS) $(RTBOOTINCLUDE) \
 
 c_flags := $(KBUILD_CFLAGS) $(cpp_flags)
 
-# LDFLAGS += -lgcc -static -L /home/zhwchen/bin/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf/lib/gcc/arm-linux-gnueabihf/7.5.0/
-# LDFLAGS += /home/zhwchen/bin/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf/bin/../lib/gcc/arm-linux-gnueabihf/7.5.0/libgcc.a
-
+LDFLAGS = --no-dynamic-linker -nostdinc -nostdlib
+# --sysroot=/home/zhwchen/bin/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf/arm-linux-gnueabihf/libc
+# -Bstatic 
+# LDFLAGS = --sysroot=/home/zhwchen/bin/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf/arm-linux-gnueabihf
+# LDFLAGS = --sysroot=$(shell $(CC)  -print-sysroot)
 export KBUILD_CPPFLAGS NOSTDINC_FLAGS RTBOOTINCLUDE OBJCOPYFLAGS LDFLAGS
 
 
 #============================================================
-soc-y :=
-soc-y += soc/$(ARCH_PATH)/
-soc-y := $(sort $(soc-y))
-soc-dirs := $(patsubst %/,%,$(filter %/, $(soc-y)))
-soc-y := $(patsubst %/, %/built-in.o, $(soc-y))
-rt-boot-soc := $(soc-y)
-
 libs-y :=
 libs-y += init/
+libs-y += soc/$(ARCH_PATH)/
+
 libs-y := $(sort $(libs-y))
 rt-boot-dirs := $(patsubst %/,%,$(filter %/, $(libs-y)))
 # 关于 libs-，如果后续使用了 CONFIG_XXX 并且 CONFIG_XXX 没有被配置的话，libs- 会有值
@@ -207,12 +212,15 @@ head-y := soc/$(ARCH_PATH)/start.o
 rt-boot-init := $(head-y)
 
 # Add GCC lib
-# ifeq ($(CONFIG_USE_PRIVATE_LIBGCC),y)
-# PLATFORM_LIBGCC = arch/$(ARCH)/lib/lib.a
-# else
 PLATFORM_LIBGCC := -L $(shell dirname `$(CC) $(c_flags) -print-libgcc-file-name`) -lgcc
-# endif
+# -L /home/zhwchen/bin/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf/arm-linux-gnueabihf/libc/usr/lib -lc
+# -L /home/zhwchen/bin/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf/arm-linux-gnueabihf/libc -lc_nonshared
+# -L $(SYSROOT_LIBC) -lc
+# -L $(SYSROOT_LIBC) -lc_nonshared
+# -L /home/zhwchen/bin/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf/arm-linux-gnueabihf/libc/usr/lib -lc
+#  
 PLATFORM_LIBS += $(PLATFORM_LIBGCC)
+
 export PLATFORM_LIBS
 export PLATFORM_LIBGCC
 
@@ -220,6 +228,7 @@ export PLATFORM_LIBGCC
 #============================================================
 ALL-y :=
 ALL-y += rt-boot.bin
+# ALL-y += rt-boot
 
 
 PHONY := _all
@@ -243,6 +252,7 @@ quiet_cmd_rt-boot__ ?= LD      $@
       -T rt-boot.lds $(rt-boot-init)                             \
       --start-group $(rt-boot-soc) $(rt-boot-main) --end-group $(PLATFORM_LIBS)
 #   -Map rt-boot.map
+# --sysroot=$(SYSROOT) 
 
 ifeq (1, 0)
 quiet_cmd_smap = GEN     common/system_map.o
@@ -264,17 +274,11 @@ rt-boot.lds: FORCE
 $(sort $(rt-boot-init) $(rt-boot-main)): $(rt-boot-dirs)
 	@:
 
-$(rt-boot-dirs): $(rt-boot-soc)
+$(rt-boot-dirs): tools_basic
 	$(Q)$(MAKE) $(build)=$@
 
-$(rt-boot-soc): $(soc-dirs)
-	@:
-
-$(soc-dirs): tools_basic
+$(head-dirs): tools_basic
 	$(Q)$(MAKE) $(build)=$@
-
-# $(head-dirs): tools_basic
-# 	$(Q)$(MAKE) $(build)=$@
 
 # Basic helpers built in scripts/
 PHONY += tools_basic

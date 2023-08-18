@@ -208,8 +208,8 @@ void SystemInit (void) {
   sctlr = __get_SCTLR();
   sctlr = (sctlr & ~(SCTLR_V_Msk       | /* Use low vector */
                      SCTLR_A_Msk       | /* Disable alignment fault checking */
-                     SCTLR_M_Msk))       /* Disable MMU */
-                 |  (SCTLR_I_Msk       | /* Enable ICache */
+                     SCTLR_M_Msk))     | /* Disable MMU */
+                    (SCTLR_I_Msk       | /* Enable ICache */
                      SCTLR_Z_Msk       | /* Enable Prediction */
                      SCTLR_CP15BEN_Msk | /* Enable CP15 barrier operations */
                      SCTLR_C_Msk);       /* Enable DCache */

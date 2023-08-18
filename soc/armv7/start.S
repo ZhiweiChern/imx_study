@@ -132,7 +132,7 @@ IRQ_Handler:
     cps #0x13					/* 进入SVC模式，允许其他中断再次进去 */
 	
 	push {lr}					/* 保存SVC模式的lr寄存器 */
-	// ldr r2, =system_irqhandler	/* 加载C语言中断处理函数到r2寄存器中*/
+	ldr r2, =SystemIrqHandler	/* 加载C语言中断处理函数到r2寄存器中*/
 	blx r2						/* 运行C语言中断处理函数，带有一个参数，保存在R0寄存器中 */
 
 	pop {lr}					/* 执行完C语言中断服务函数，lr出栈 */
