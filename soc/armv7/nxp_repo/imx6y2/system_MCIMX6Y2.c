@@ -217,7 +217,7 @@ void SystemInit (void) {
 
   /* Set vector base address */
   GIC_Init();
-  __set_VBAR((uint32_t)0x87800000);
+  __set_VBAR((uint32_t)__VECTOR_TABLE);
 
 #if ((__FPU_PRESENT == 1) && (__FPU_USED == 1))
   cpacr = __get_CPACR();

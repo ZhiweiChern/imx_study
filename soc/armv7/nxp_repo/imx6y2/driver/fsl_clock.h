@@ -709,7 +709,7 @@ static inline void CLOCK_SetMux(clock_mux_t mux, uint32_t value)
     CCM_TUPLE_REG(CCM, mux) = (CCM_TUPLE_REG(CCM, mux) & (~CCM_TUPLE_MASK(mux))) |
                               (((uint32_t)((value) << CCM_TUPLE_SHIFT(mux))) & CCM_TUPLE_MASK(mux));
 
-    assert(busyShift <= CCM_NO_BUSY_WAIT);
+    // assert(busyShift <= CCM_NO_BUSY_WAIT);
 
     /* Clock switch need Handshake? */
     if (CCM_NO_BUSY_WAIT != busyShift)
@@ -746,7 +746,7 @@ static inline void CLOCK_SetDiv(clock_div_t divider, uint32_t value)
     CCM_TUPLE_REG(CCM, divider) = (CCM_TUPLE_REG(CCM, divider) & (~CCM_TUPLE_MASK(divider))) |
                               (((uint32_t)((value) << CCM_TUPLE_SHIFT(divider))) & CCM_TUPLE_MASK(divider));
 
-    assert(busyShift <= CCM_NO_BUSY_WAIT);
+    // assert(busyShift <= CCM_NO_BUSY_WAIT);
 
     /* Clock switch need Handshake? */
     if (CCM_NO_BUSY_WAIT != busyShift)

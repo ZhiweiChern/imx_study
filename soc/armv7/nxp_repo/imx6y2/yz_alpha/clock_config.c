@@ -67,7 +67,6 @@ void BOARD_BootClockRUN(void)
     CLOCK_SetXtalFreq(24000000U);
     CLOCK_SetRtcXtalFreq(32768U);
 
-#if 0
     /* Switch CPU off ARM PLL */
     if (CLOCK_GetMux(kCLOCK_Pll1SwMux) == 0) /* CPU runs on ARM PLL */
     {
@@ -109,6 +108,7 @@ void BOARD_BootClockRUN(void)
 #error Not supported compiler type
 #endif
 
+#if 0
     /* Disable unused clock */
     BOARD_BootClockGate();
 

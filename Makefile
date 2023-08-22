@@ -176,10 +176,6 @@ SYSROOT_INC = $(SYSROOT)/usr/include
 SYSROOT_LIBC = $(SYSROOT)/usr/lib
 
 NOSTDINC_FLAGS += -nostdinc -isystem $(SYSROOT_INC) -isystem $(shell $(CC) -print-file-name=include)
-# -isystem /home/zhwchen/bin/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf/arm-linux-gnueabihf/libc/usr/include
-# -isystem /home/zhwchen/bin/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf/lib/gcc/arm-linux-gnueabihf/7.5.0/include
-
-# NOSTDINC_FLAGS += -isystem $(shell $(CC) -print-file-name=include)
 
 # PLATFORM_CPPFLAGS 这个是为不同平台准备的接口，不同的平台可以差异化编译选项
 cpp_flags := $(KBUILD_CPPFLAGS) $(PLATFORM_CPPFLAGS) $(RTBOOTINCLUDE) \
@@ -187,11 +183,8 @@ cpp_flags := $(KBUILD_CPPFLAGS) $(PLATFORM_CPPFLAGS) $(RTBOOTINCLUDE) \
 
 c_flags := $(KBUILD_CFLAGS) $(cpp_flags)
 
-LDFLAGS = --no-dynamic-linker -nostdinc -nostdlib
-# --sysroot=/home/zhwchen/bin/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf/arm-linux-gnueabihf/libc
-# -Bstatic 
-# LDFLAGS = --sysroot=/home/zhwchen/bin/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf/arm-linux-gnueabihf
-# LDFLAGS = --sysroot=$(shell $(CC)  -print-sysroot)
+LDFLAGS = --no-dynamic-linker -nostdlib
+
 export KBUILD_CPPFLAGS NOSTDINC_FLAGS RTBOOTINCLUDE OBJCOPYFLAGS LDFLAGS
 
 
@@ -213,12 +206,6 @@ rt-boot-init := $(head-y)
 
 # Add GCC lib
 PLATFORM_LIBGCC := -L $(shell dirname `$(CC) $(c_flags) -print-libgcc-file-name`) -lgcc
-# -L /home/zhwchen/bin/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf/arm-linux-gnueabihf/libc/usr/lib -lc
-# -L /home/zhwchen/bin/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf/arm-linux-gnueabihf/libc -lc_nonshared
-# -L $(SYSROOT_LIBC) -lc
-# -L $(SYSROOT_LIBC) -lc_nonshared
-# -L /home/zhwchen/bin/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf/arm-linux-gnueabihf/libc/usr/lib -lc
-#  
 PLATFORM_LIBS += $(PLATFORM_LIBGCC)
 
 export PLATFORM_LIBS
@@ -248,11 +235,10 @@ rt-boot.bin: rt-boot FORCE
 # Rule to link rt-boot
 # May be overridden by arch/$(ARCH)/config.mk
 quiet_cmd_rt-boot__ ?= LD      $@
-      cmd_rt-boot__ ?= $(LD) $(LDFLAGS) $(LDFLAGS_rt-boot) -o $@ \
-      -T rt-boot.lds $(rt-boot-init)                             \
-      --start-group $(rt-boot-soc) $(rt-boot-main) --end-group $(PLATFORM_LIBS)
-#   -Map rt-boot.map
-# --sysroot=$(SYSROOT) 
+	  cmd_rt-boot__ ?= $(LD) $(LDFLAGS) $(LDFLAGS_rt-boot) -o $@ \
+		-T rt-boot.lds $(rt-boot-init)                             \
+		--start-group $(rt-boot-soc) $(rt-boot-main) --end-group $(PLATFORM_LIBS) \
+		-Map rt-boot.map
 
 ifeq (1, 0)
 quiet_cmd_smap = GEN     common/system_map.o
@@ -269,7 +255,7 @@ rt-boot: $(rt-boot-init) $(rt-boot-main) rt-boot.lds FORCE
 #	$(call cmd,u-boot__) common/system_map.o
 
 rt-boot.lds: FORCE
-	cp soc/$(ARCH_PATH)/rt-boot.lds ./
+	cp soc/$(ARCH_PATH)/$(MANUFACT)/$(SOC_FAMILY)/rt-boot.lds ./
 
 $(sort $(rt-boot-init) $(rt-boot-main)): $(rt-boot-dirs)
 	@:

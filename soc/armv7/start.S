@@ -31,7 +31,8 @@ _start:
     /* 看完这个写法，对 M 核的 DCD 的命令有些不理解了啊 */
 #endif
 
-/* 复位中断 */	
+/* 复位中断 */
+.global Reset_Handler
 Reset_Handler:
 
     cpsid i						/* 关闭全局中断 */
