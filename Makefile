@@ -102,7 +102,6 @@ export CONFIG_SHELL HOSTCC HOSTCXX HOSTCFLAGS HOSTCXXFLAGS
 
 #-------------------------------------------
 # ARCH := arm
-CROSS_COMPILE := arm-linux-gnueabihf-
 
 AS		= $(CROSS_COMPILE)as
 # LD		= $(CROSS_COMPILE)ld
@@ -174,13 +173,9 @@ SYSROOT := $(shell $(CC)  -print-sysroot)
 # $(info SYSROOT: $(SYSROOT))
 SYSROOT_INC := $(SYSROOT)/usr/include
 SYSROOT_LIBC := $(SYSROOT)/usr/lib
-$(info SYSROOT_INC: $(SYSROOT_INC))
-# SYSROOT_INC := /home/zhwchen/bin/gcc-arm-10.3-2021.07-x86_64-arm-none-eabi/arm-none-eabi/include
+# $(info SYSROOT_INC: $(SYSROOT_INC))
 
-NOSTDINC_FLAGS += -nostdinc -isystem $(SYSROOT_INC) -isystem $(shell $(CC) -print-file-name=include)
-# -isystem /home/zhwchen/bin/gcc-arm-10.3-2021.07-x86_64-arm-none-eabi/lib/gcc/arm-none-eabi/10.3.1/include
-# -isystem $(SYSROOT_INC) -isystem $(shell $(CC) -print-file-name=include)
-# NOSTDINC_FLAGS += -nostdinc -isystem $(SYSROOT_INC) -isystem $(shell $(CC) -print-file-name=include)
+NOSTDINC_FLAGS += -nostdinc -nostdlib -isystem $(SYSROOT_INC) -isystem $(shell $(CC) -print-file-name=include)
 
 # PLATFORM_CPPFLAGS 这个是为不同平台准备的接口，不同的平台可以差异化编译选项
 cpp_flags := $(KBUILD_CPPFLAGS) $(PLATFORM_CPPFLAGS) $(RTBOOTINCLUDE) \
@@ -188,12 +183,9 @@ cpp_flags := $(KBUILD_CPPFLAGS) $(PLATFORM_CPPFLAGS) $(RTBOOTINCLUDE) \
 
 c_flags := $(KBUILD_CFLAGS) $(cpp_flags)
 
-LDFLAGS = --no-dynamic-linker -Bstatic
-# --sysroot=/home/zhwchen/bin/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf/bin/../arm-linux-gnueabihf/libc
-# LDFLAGS = --no-dynamic-linker -nostdlib --sysroot=/home/zhwchen/bin/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf/bin/../arm-linux-gnueabihf/libc
+LDFLAGS = --no-dynamic-linker -Bstatic -nostdlib
 
 export KBUILD_CPPFLAGS NOSTDINC_FLAGS RTBOOTINCLUDE OBJCOPYFLAGS LDFLAGS
-
 
 #============================================================
 libs-y :=
@@ -213,18 +205,14 @@ rt-boot-init := $(head-y)
 
 # Add GCC lib
 PLATFORM_LIBGCC := -L $(shell dirname `$(CC) $(c_flags) -print-libgcc-file-name`) -lgcc -L $(SYSROOT_LIBC) -lc
-# -L /home/zhwchen/bin/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf/bin/../arm-linux-gnueabihf/libc/usr/lib -lc
 PLATFORM_LIBS += $(PLATFORM_LIBGCC)
 
 export PLATFORM_LIBS
 export PLATFORM_LIBGCC
 
-
 #============================================================
 ALL-y :=
 ALL-y += rt-boot.bin
-# ALL-y += rt-boot
-
 
 PHONY := _all
 _all: $(ALL-y)
@@ -258,10 +246,10 @@ cmd_smap = \
 endif
 
 rt-boot: $(rt-boot-init) $(rt-boot-main) rt-boot.lds FORCE
-	$(LD) $(LDFLAGS) --print-sysroot
 	$(call if_changed,rt-boot__)
 #	$(call cmd,smap)
 #	$(call cmd,u-boot__) common/system_map.o
+#	$(LD) $(LDFLAGS) --print-sysroot
 
 rt-boot.lds: FORCE
 	cp soc/$(ARCH_PATH)/$(MANUFACT)/$(SOC_FAMILY)/rt-boot.lds ./
@@ -297,7 +285,7 @@ quiet_cmd_rmfiles = $(if $(wildcard $(rm-files)),CLEAN   $(wildcard $(rm-files))
 
 # Directories & files removed with 'make clean'
 CLEAN_DIRS  :=
-CLEAN_FILES := rt-boot rt-boot.bin rt-boot.lds system.map
+CLEAN_FILES := rt-boot rt-boot.bin rt-boot.lds rt-boot.map
 
 # Directories & files removed with 'make mrproper'
 MRPROPER_DIRS  :=
@@ -326,6 +314,22 @@ clean: $(clean-dirs)
 		-o -name '*.symtypes' -o -name 'modules.order' \
 		-o -name modules.builtin -o -name '.tmp_*.o.*' \
 		-o -name '*.gcno' \) -type f -print | xargs rm -f
+
+# mrproper - Delete all generated files, including .config
+#
+mrproper: rm-dirs  := $(wildcard $(MRPROPER_DIRS))
+mrproper: rm-files := $(wildcard $(MRPROPER_FILES))
+mrproper-dirs      := $(addprefix _mrproper_,tools)
+
+PHONY += $(mrproper-dirs) mrproper archmrproper
+$(mrproper-dirs):
+	$(Q)$(MAKE) $(clean)=$(patsubst _mrproper_%,%,$@)
+
+mrproper: clean $(mrproper-dirs)
+	$(call cmd,rmdirs)
+	$(call cmd,rmfiles)
+#	@rm -f arch/*/include/asm/arch
+
 #============================================================
 
 PHONY += FORCE

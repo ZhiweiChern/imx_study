@@ -1,26 +1,28 @@
 /**********************************************************************
- * FilePath: mem_config.h
+ * FilePath: gpio.h
  * Author: 
- * Date: 2023-8-23 15:55:57
- * Version: 
+ * Date: 2023-8-23 15:39:19
+ * Version: V1
  * Brief: 
  * Note: 
  * Remarks: 
  **********************************************************************/
-#ifndef _MEM_CONFIG_H_
-#define _MEM_CONFIG_H_
+#ifndef _GPIO_H_
+#define _GPIO_H_
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void BOARD_InitMemory(void);
+int pins_iomux_init(void);
+void gpio_init(void);
+void key0_irqhandler(void);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif  /* _MEM_CONFIG_H_ */
+#endif  /* _GPIO_H_ */
 
 /******************** end of file ********************/

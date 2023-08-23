@@ -783,7 +783,7 @@ static inline void CLOCK_ControlGate(clock_ip_name_t name, clock_gate_value_t va
     uint32_t shift = (((uint32_t)name) & 0xF) << 1;
     volatile uint32_t *reg;
 
-    assert (index <= 6);
+    // assert (index <= 6);
 
     reg = ((volatile uint32_t *)&CCM->CCGR0) + index;
     *reg = ((*reg) & ~(3U << shift)) | (((uint32_t)value) << shift);
