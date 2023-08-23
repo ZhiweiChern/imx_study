@@ -76,8 +76,8 @@ SECTIONS{
     {
         . = ALIGN(4);
         __ocram_data_start__ = .;
-        *(OcramData)
-        *(OcramText)
+        *(.ocram_data)
+        *(.ocram_text)
         . = ALIGN(4);
         __ocram_data_end__ = .;
     } > m_ocram

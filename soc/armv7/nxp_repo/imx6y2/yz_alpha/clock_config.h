@@ -46,7 +46,7 @@ void BOARD_BootClockRUN(void);
 #if defined(__ICCARM__)
 void BOARD_SetRunClock(void);
 #elif defined(__GNUC__)
-void BOARD_SetRunClock(void) __attribute__((section("OcramText")));
+void BOARD_SetRunClock(void) __attribute__((section(".ocram_text")));
 #else
 #error Not supported compiler type
 #endif

@@ -108,7 +108,6 @@ void BOARD_BootClockRUN(void)
 #error Not supported compiler type
 #endif
 
-#if 0
     /* Disable unused clock */
     BOARD_BootClockGate();
 
@@ -118,14 +117,15 @@ void BOARD_BootClockRUN(void)
     CLOCK_DeinitVideoPll();
     CLOCK_DeinitEnetPll();
 
+#if 0
     /* Configure UART divider to default */
     CLOCK_SetMux(kCLOCK_UartMux, 0); /* Set UART source to PLL3 80M */
     CLOCK_SetDiv(kCLOCK_UartDiv, 0); /* Set UART divider to 1 */
 
     CLOCK_SetMux(kCLOCK_PerclkMux, 0); /* Set I2C/EPIT source to IPG 66M */
     CLOCK_SetDiv(kCLOCK_PerclkDiv, 0); /* Set I2C/EPIT divider to 1 */
+#endif
 
     /* Update core clock */
     SystemCoreClockUpdate();
-#endif
 }

@@ -170,12 +170,17 @@ inc-y := $(patsubst %,-I%, $(inc-y))
 # Needed to be compatible with the O= option
 RTBOOTINCLUDE :=  -I$(srctree) $(inc-y)
 
-SYSROOT = $(shell $(CC)  -print-sysroot)
-$(info SYSROOT: $(SYSROOT))
-SYSROOT_INC = $(SYSROOT)/usr/include
-SYSROOT_LIBC = $(SYSROOT)/usr/lib
+SYSROOT := $(shell $(CC)  -print-sysroot)
+# $(info SYSROOT: $(SYSROOT))
+SYSROOT_INC := $(SYSROOT)/usr/include
+SYSROOT_LIBC := $(SYSROOT)/usr/lib
+$(info SYSROOT_INC: $(SYSROOT_INC))
+# SYSROOT_INC := /home/zhwchen/bin/gcc-arm-10.3-2021.07-x86_64-arm-none-eabi/arm-none-eabi/include
 
 NOSTDINC_FLAGS += -nostdinc -isystem $(SYSROOT_INC) -isystem $(shell $(CC) -print-file-name=include)
+# -isystem /home/zhwchen/bin/gcc-arm-10.3-2021.07-x86_64-arm-none-eabi/lib/gcc/arm-none-eabi/10.3.1/include
+# -isystem $(SYSROOT_INC) -isystem $(shell $(CC) -print-file-name=include)
+# NOSTDINC_FLAGS += -nostdinc -isystem $(SYSROOT_INC) -isystem $(shell $(CC) -print-file-name=include)
 
 # PLATFORM_CPPFLAGS 这个是为不同平台准备的接口，不同的平台可以差异化编译选项
 cpp_flags := $(KBUILD_CPPFLAGS) $(PLATFORM_CPPFLAGS) $(RTBOOTINCLUDE) \
@@ -183,7 +188,9 @@ cpp_flags := $(KBUILD_CPPFLAGS) $(PLATFORM_CPPFLAGS) $(RTBOOTINCLUDE) \
 
 c_flags := $(KBUILD_CFLAGS) $(cpp_flags)
 
-LDFLAGS = --no-dynamic-linker -nostdlib
+LDFLAGS = --no-dynamic-linker -Bstatic
+# --sysroot=/home/zhwchen/bin/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf/bin/../arm-linux-gnueabihf/libc
+# LDFLAGS = --no-dynamic-linker -nostdlib --sysroot=/home/zhwchen/bin/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf/bin/../arm-linux-gnueabihf/libc
 
 export KBUILD_CPPFLAGS NOSTDINC_FLAGS RTBOOTINCLUDE OBJCOPYFLAGS LDFLAGS
 
@@ -205,7 +212,8 @@ head-y := soc/$(ARCH_PATH)/start.o
 rt-boot-init := $(head-y)
 
 # Add GCC lib
-PLATFORM_LIBGCC := -L $(shell dirname `$(CC) $(c_flags) -print-libgcc-file-name`) -lgcc
+PLATFORM_LIBGCC := -L $(shell dirname `$(CC) $(c_flags) -print-libgcc-file-name`) -lgcc -L $(SYSROOT_LIBC) -lc
+# -L /home/zhwchen/bin/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf/bin/../arm-linux-gnueabihf/libc/usr/lib -lc
 PLATFORM_LIBS += $(PLATFORM_LIBGCC)
 
 export PLATFORM_LIBS
@@ -250,6 +258,7 @@ cmd_smap = \
 endif
 
 rt-boot: $(rt-boot-init) $(rt-boot-main) rt-boot.lds FORCE
+	$(LD) $(LDFLAGS) --print-sysroot
 	$(call if_changed,rt-boot__)
 #	$(call cmd,smap)
 #	$(call cmd,u-boot__) common/system_map.o

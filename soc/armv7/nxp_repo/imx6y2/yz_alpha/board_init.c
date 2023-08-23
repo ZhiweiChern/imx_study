@@ -2,9 +2,12 @@
 
 **************************************************************/
 
+#include "mem_config.h"
+#include "clock_config.h"
+
 #include "MCIMX6Y2.h"
 #include "fsl_iomuxc.h"
-#include "clock_config.h"
+
 
 static int pins_init(void);
 
@@ -13,6 +16,11 @@ int board_init(void)
 	SystemInitIrqTable();
     pins_init();
     BOARD_BootClockRUN();
+    BOARD_InitMemory();
+
+#if 0
+    BOARD_InitDebugConsole();
+#endif
 
 	return 0;
 }
