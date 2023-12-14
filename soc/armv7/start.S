@@ -17,7 +17,7 @@
  * 		 	ARM Cortex-A(armV7)编程手册V4.0.pdf P165 11.1.1 Exception priorities(异常)
  */
 _start:
-    ldr pc, =Reset_Handler		/* 复位中断 					*/	
+    ldr pc, =Reset_Handler		/* 复位中断 					*/
 #if 1
     ldr pc, =Undefined_Handler	/* 未定义中断 					*/
     ldr pc, =SVC_Handler		/* SVC(Supervisor)中断 		*/
@@ -40,7 +40,7 @@ Reset_Handler:
     /* 关闭I,DCache和MMU 
      * 采取读-改-写的方式。
      */
-	mrc     p15, 0, r0, c1, c0, 0     /* 读取CP15的C1寄存器到R0中       		        	*/
+    mrc     p15, 0, r0, c1, c0, 0     /* 读取CP15的C1寄存器到R0中       		        	*/
     bic     r0,  r0, #(0x1 << 12)     /* 清除C1寄存器的bit12位(I位)，关闭I Cache            	*/
     bic     r0,  r0, #(0x1 <<  2)     /* 清除C1寄存器的bit2(C位)，关闭D Cache    				*/
     bic     r0,  r0, #0x2             /* 清除C1寄存器的bit1(A位)，关闭对齐						*/
@@ -93,7 +93,7 @@ SVC_Handler:
 
 /* 预取终止中断 */
 PrefAbort_Handler:
-    ldr r0, =PrefAbort_Handler	
+    ldr r0, =PrefAbort_Handler
     bx r0
 
 /* 数据终止中断 */
@@ -131,30 +131,29 @@ IRQ_Handler:
     push {r0, r1}				/* 保存r0,r1 */
 
     cps #0x13					/* 进入SVC模式，允许其他中断再次进去 */
-	
-	push {lr}					/* 保存SVC模式的lr寄存器 */
-	ldr r2, =system_irqhandler	/* 加载C语言中断处理函数到r2寄存器中*/
-	blx r2						/* 运行C语言中断处理函数，带有一个参数，保存在R0寄存器中 */
 
-	pop {lr}					/* 执行完C语言中断服务函数，lr出栈 */
-	cps #0x12					/* 进入IRQ模式 */
-	pop {r0, r1}				
-	str r0, [r1, #0X10]			/* 中断执行完成，写EOIR */
+    push {lr}					/* 保存SVC模式的lr寄存器 */
+    ldr r2, =system_irqhandler	/* 加载C语言中断处理函数到r2寄存器中*/
+    blx r2						/* 运行C语言中断处理函数，带有一个参数，保存在R0寄存器中 */
 
-	pop {r0}						
-	msr spsr_cxsf, r0			/* 恢复spsr */
+    pop {lr}					/* 执行完C语言中断服务函数，lr出栈 */
+    cps #0x12					/* 进入IRQ模式 */
+    pop {r0, r1}
+    str r0, [r1, #0X10]			/* 中断执行完成，写EOIR */
 
-	pop {r0-r3, r12}			/* r0-r3,r12出栈 */
-	pop {lr}					/* lr出栈 */
-	subs pc, lr, #4				/* 将lr-4赋给pc */
-	
-	
+    pop {r0}
+    msr spsr_cxsf, r0			/* 恢复spsr */
+
+    pop {r0-r3, r12}			/* r0-r3,r12出栈 */
+    pop {lr}					/* lr出栈 */
+    subs pc, lr, #4				/* 将lr-4赋给pc */
+
 
 /* FIQ中断 */
 FIQ_Handler:
 
-	ldr r0, =FIQ_Handler	
-	bx r0									
+    ldr r0, =FIQ_Handler
+    bx r0
 
 .globl raise
 raise :

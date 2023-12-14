@@ -93,10 +93,9 @@ void system_irqhandler(unsigned int giccIar)
  */
 void default_irqhandler(unsigned int giccIar, void *userParam) 
 {
-    while(1) 
-      {
-       }
+    while (1) {
+        ;
+    }
 }
 
-
-
+/******************** end of file ********************/

@@ -9,7 +9,6 @@
  **********************************************************************/
 
 #include "fsl_iomuxc.h"
-
 #include "bsp_led.h"
 
 
@@ -22,7 +21,6 @@ void led_init(void)
 {
     /* 1、初始化IO复用 */
     IOMUXC_SetPinMux(IOMUXC_GPIO1_IO03_GPIO1_IO03,0);		/* 复用为GPIO1_IO03 */
-    
     
     /* 2、、配置GPIO1_IO03的IO属性	
      *bit 16:0 HYS关闭
@@ -43,7 +41,6 @@ void led_init(void)
     GPIO1->DR &= ~(1 << 3);		
 }
 
-
 /*
  * @description		: LED控制函数，控制LED打开还是关闭
  * @param - led		: 要控制的LED灯编号
@@ -62,3 +59,5 @@ void led_switch(int led, int status)
             break;
     }
 }
+
+/******************** end of file ********************/

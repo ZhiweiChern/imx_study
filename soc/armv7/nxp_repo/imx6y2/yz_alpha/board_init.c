@@ -8,23 +8,32 @@
  * Remarks: 
  **********************************************************************/
 
-#include "gpio.h"
 #include "bsp_clk.h"
 #include "bsp_int.h"
 #include "bsp_led.h"
+#include "bsp_exit.h"
+#include "bsp_key.h"
 
 static void delay(void);
 
+unsigned char state = 0;
 
 int board_init(void)
 {
+    int active = 1;
+
     int_init();
     imx6u_clkinit();
     clk_enable();
     led_init();
+    key_init();
+    exit_init();
 
-    delay();
-    led_switch(LED0, OFF);
+    while (active) {
+        delay();
+        state = !state;
+        led_switch(LED0, state);
+    }
 
     return 1;
 }
@@ -32,10 +41,9 @@ int board_init(void)
 static void delay(void)
 {
     volatile uint32_t i = 0;
-    for (i = 0; i < 5000000; ++i)
+    for (i = 0; i < 1000000; ++i)
     {
-        // __NOP(); /* delay */
-        __ASM volatile ("nop");
+        __NOP(); /* delay */
     }
 }
 
