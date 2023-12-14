@@ -1,16 +1,18 @@
-#ifndef _BSP_INT_H
-#define _BSP_INT_H
-#include "imx6ul.h"
-/***************************************************************
-Copyright © zuozhongkai Co., Ltd. 1998-2019. All rights reserved.
-文件名	: 	 bsp_int.c
-作者	   : 左忠凯
-版本	   : V1.0
-描述	   : 中断驱动头文件。
-其他	   : 无
-论坛 	   : www.openedv.com
-日志	   : 初版V1.0 2019/1/4 左忠凯创建
-***************************************************************/
+/**********************************************************************
+ * FilePath: 
+ * Author: 
+ * Date: 
+ * Version: 
+ * Brief: 
+ * Note: 
+ * Remarks: 
+ **********************************************************************/
+
+#ifndef _BSP_INT_H_
+#define _BSP_INT_H_
+// #include "imx6ul.h"
+
+#include "MCIMX6Y2.h"
 
 /* 中断服务函数形式 */ 
 typedef void (*system_irq_handler_t) (unsigned int giccIar, void *param);
@@ -33,4 +35,4 @@ void default_irqhandler(unsigned int giccIar, void *userParam);
 
 
 
-#endif
+#endif  /* _BSP_INT_H_ */

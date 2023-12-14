@@ -1,91 +1,220 @@
-#ifndef __CORTEX_CA7_H
-#define __CORTEX_CA7_H
-/***************************************************************
-Copyright © zuozhongkai Co., Ltd. 1998-2019. All rights reserved.
-文件名	: 	 core_ca7.h
-作者	   : 左忠凯
-版本	   : V1.0
-描述	   : Cortex-A7内核通用文件。
-其他	   : 本文件主要实现了对GIC操作函数
-论坛 	   : www.openedv.com
-日志	   : 初版V1.0 2019/1/4 左忠凯创建
-***************************************************************/
+/* Copyright (c) 2009 - 2015 ARM LIMITED
+   Copyright (c) 2016, Freescale Semiconductor, Inc.
+
+   Redistribution and use in source and binary forms, with or without
+   modification, are permitted provided that the following conditions are met:
+   - Redistributions of source code must retain the above copyright
+     notice, this list of conditions and the following disclaimer.
+   - Redistributions in binary form must reproduce the above copyright
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
+   - Neither the name of ARM nor the names of its contributors may be used
+     to endorse or promote products derived from this software without
+     specific prior written permission.
+   *
+   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+   ARE DISCLAIMED. IN NO EVENT SHALL COPYRIGHT HOLDERS AND CONTRIBUTORS BE
+   LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+   CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+   SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+   INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+   POSSIBILITY OF SUCH DAMAGE.
+   ---------------------------------------------------------------------------*/
+
+#if   defined ( __ICCARM__ )
+ #pragma system_include         /* treat file as system include file for MISRA check */
+#elif defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+  #pragma clang system_header   /* treat file as system include file */
+#endif
+
+#ifndef __CORE_CA7_H_GENERIC
+#define __CORE_CA7_H_GENERIC
+
 #include <stdint.h>
 #include <string.h>
 
+#ifdef __cplusplus
+ extern "C" {
+#endif
 
-#define FORCEDINLINE  __attribute__((always_inline))
-#define __ASM            __asm                         	/* GNU C语言内嵌汇编关键字 */ 
-#define __INLINE         inline                      	/* GNU内联关键字 */             
-#define __STATIC_INLINE  static inline					
+#if defined(__GNUC__)
+  #define FORCEDINLINE  __attribute__((always_inline))
+#else 
+  #define FORCEDINLINE
+#endif
 
+#if   defined ( __CC_ARM )
+  #define __ASM            __asm                                      /*!< asm keyword for ARM Compiler */
+  #define __INLINE         __inline                                   /*!< inline keyword for ARM Compiler */
+  #define __STATIC_INLINE  static __inline
 
-#define     __IM     volatile const      /* 只读 */
-#define     __OM     volatile            /* 只写 */
-#define     __IOM    volatile            /* 读写 */
-#define __STRINGIFY(x) #x
+#elif defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+  #define __ASM            __asm                                      /*!< asm keyword for ARM Compiler */
+  #define __INLINE         __inline                                   /*!< inline keyword for ARM Compiler */
+  #define __STATIC_INLINE  static __inline
 
-/* C语言实现MCR指令 */
-#define __MCR(coproc, opcode_1, src, CRn, CRm, opcode_2)                          \
-    __ASM volatile ("MCR " __STRINGIFY(p##coproc) ", " __STRINGIFY(opcode_1) ", " \
-                    "%0, " __STRINGIFY(c##CRn) ", " __STRINGIFY(c##CRm) ", "      \
-                    __STRINGIFY(opcode_2)                                         \
-                    : : "r" (src) )
+#elif defined ( __GNUC__ )
+  #define __ASM            __asm                                      /*!< asm keyword for GNU Compiler */
+  #define __INLINE         inline                                     /*!< inline keyword for GNU Compiler */
+  #define __STATIC_INLINE  static inline
 
-/* C语言实现MRC指令 */                    
-#define __MRC(coproc, opcode_1, CRn, CRm, opcode_2)                               \
-  ({                                                                              \
-    uint32_t __dst;                                                               \
-    __ASM volatile ("MRC " __STRINGIFY(p##coproc) ", " __STRINGIFY(opcode_1) ", " \
-                    "%0, " __STRINGIFY(c##CRn) ", " __STRINGIFY(c##CRm) ", "      \
-                    __STRINGIFY(opcode_2)                                         \
-                    : "=r" (__dst) );                                             \
-    __dst;                                                                        \
-  })
+#elif defined ( __ICCARM__ )
+  #define __ASM            __asm                                      /*!< asm keyword for IAR Compiler */
+  #define __INLINE         inline                                     /*!< inline keyword for IAR Compiler. Only available in High optimization mode! */
+  #define __STATIC_INLINE  static inline
 
-/* 其他一些C语言内嵌汇编 */  
-__attribute__( ( always_inline ) ) __STATIC_INLINE void __set_APSR(uint32_t apsr)
-{
-  __ASM volatile ("MSR apsr, %0" : : "r" (apsr) : "cc");
+#elif defined ( __TMS470__ )
+  #define __ASM            __asm                                      /*!< asm keyword for TI CCS Compiler */
+  #define __STATIC_INLINE  static inline
+
+#elif defined ( __TASKING__ )
+  #define __ASM            __asm                                      /*!< asm keyword for TASKING Compiler */
+  #define __INLINE         inline                                     /*!< inline keyword for TASKING Compiler */
+  #define __STATIC_INLINE  static inline
+
+#elif defined ( __CSMC__ )
+  #define __packed
+  #define __ASM            _asm                                      /*!< asm keyword for COSMIC Compiler */
+  #define __INLINE         inline                                    /*!< inline keyword for COSMIC Compiler. Use -pc99 on compile line */
+  #define __STATIC_INLINE  static inline
+
+#else
+  #error Unknown compiler
+#endif
+
+/** __FPU_USED indicates whether an FPU is used or not.
+    For this, __FPU_PRESENT has to be checked prior to making use of FPU specific registers and functions.
+*/
+#if defined ( __CC_ARM )
+  #if defined __TARGET_FPU_VFP
+    #if (__FPU_PRESENT == 1U)
+      #define __FPU_USED       1U
+    #else
+      #error "Compiler generates FPU instructions for a device without an FPU (check __FPU_PRESENT)"
+      #define __FPU_USED       0U
+    #endif
+  #else
+    #define __FPU_USED         0U
+  #endif
+
+#elif defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+  #if defined __ARM_PCS_VFP
+    #if (__FPU_PRESENT == 1)
+      #define __FPU_USED       1U
+    #else
+      #warning "Compiler generates FPU instructions for a device without an FPU (check __FPU_PRESENT)"
+      #define __FPU_USED       0U
+    #endif
+  #else
+    #define __FPU_USED         0U
+  #endif
+
+#elif defined ( __GNUC__ )
+  #if defined (__VFP_FP__) && !defined(__SOFTFP__)
+    #if (__FPU_PRESENT == 1U)
+      #define __FPU_USED       1U
+    #else
+      #error "Compiler generates FPU instructions for a device without an FPU (check __FPU_PRESENT)"
+      #define __FPU_USED       0U
+    #endif
+  #else
+    #define __FPU_USED         0U
+  #endif
+
+#elif defined ( __ICCARM__ )
+  #if defined __ARMVFP__
+    #if (__FPU_PRESENT == 1U)
+      #define __FPU_USED       1U
+    #else
+      #error "Compiler generates FPU instructions for a device without an FPU (check __FPU_PRESENT)"
+      #define __FPU_USED       0U
+    #endif
+  #else
+    #define __FPU_USED         0U
+  #endif
+
+#elif defined ( __TMS470__ )
+  #if defined __TI_VFP_SUPPORT__
+    #if (__FPU_PRESENT == 1U)
+      #define __FPU_USED       1U
+    #else
+      #error "Compiler generates FPU instructions for a device without an FPU (check __FPU_PRESENT)"
+      #define __FPU_USED       0U
+    #endif
+  #else
+    #define __FPU_USED         0U
+  #endif
+
+#elif defined ( __TASKING__ )
+  #if defined __FPU_VFP__
+    #if (__FPU_PRESENT == 1U)
+      #define __FPU_USED       1U
+    #else
+      #error "Compiler generates FPU instructions for a device without an FPU (check __FPU_PRESENT)"
+      #define __FPU_USED       0U
+    #endif
+  #else
+    #define __FPU_USED         0U
+  #endif
+
+#elif defined ( __CSMC__ )
+  #if ( __CSMC__ & 0x400U)
+    #if (__FPU_PRESENT == 1U)
+      #define __FPU_USED       1U
+    #else
+      #error "Compiler generates FPU instructions for a device without an FPU (check __FPU_PRESENT)"
+      #define __FPU_USED       0U
+    #endif
+  #else
+    #define __FPU_USED         0U
+  #endif
+
+#endif
+
+#include "core_ca.h"                /* Core Instruction and Function Access */
+
+#ifdef __cplusplus
 }
+#endif
 
-__attribute__( ( always_inline ) ) __STATIC_INLINE uint32_t __get_CPSR(void)
-{
-  uint32_t result;
+#endif /* __CORE_CA7_H_GENERIC */
 
-  __ASM volatile ("MRS %0, cpsr" : "=r" (result) );
-  return(result);
-}
+#ifndef __CMSIS_GENERIC
 
-__attribute__( ( always_inline ) ) __STATIC_INLINE void __set_CPSR(uint32_t cpsr)
-{
-  __ASM volatile ("MSR cpsr, %0" : : "r" (cpsr) : "cc");
-}
+#ifndef __CORE_CA7_H_DEPENDANT
+#define __CORE_CA7_H_DEPENDANT
 
-__attribute__( ( always_inline ) ) __STATIC_INLINE uint32_t __get_FPEXC(void)
-{
-  uint32_t result;
+#ifdef __cplusplus
+ extern "C" {
+#endif
 
-  __ASM volatile ("VMRS %0, fpexc" : "=r" (result) );
-  return result;
-}
+/* IO definitions (access restrictions to peripheral registers) */
+#ifdef __cplusplus
+  #define   __I     volatile             /*!< Defines 'read only' permissions */
+#else
+  #define   __I     volatile const       /*!< Defines 'read only' permissions */
+#endif
+#define     __O     volatile             /*!< Defines 'write only' permissions */
+#define     __IO    volatile             /*!< Defines 'read / write' permissions */
 
-__attribute__( ( always_inline ) ) __STATIC_INLINE void __set_FPEXC(uint32_t fpexc)
-{
-  __ASM volatile ("VMSR fpexc, %0" : : "r" (fpexc));
-}
+/* following defines should be used for structure members */
+#define     __IM     volatile const      /*! Defines 'read only' structure member permissions */
+#define     __OM     volatile            /*! Defines 'write only' structure member permissions */
+#define     __IOM    volatile            /*! Defines 'read / write' structure member permissions */
 
 
 /*******************************************************************************
- *        		一些内核寄存器定义和抽象
-  定义如下几个内核寄存器:
+ *                 Register Abstraction
+  Core Register contain:
   - CPSR
-  - CP15
+  - CP15 Registers
  ******************************************************************************/
 
-/* CPSR寄存器 
- * 参考资料：ARM Cortex-A(armV7)编程手册V4.0.pdf P46
- */
+/* Core Register CPSR */
 typedef union
 {
   struct
@@ -110,10 +239,54 @@ typedef union
   uint32_t w;                            /*!< Type      used for word access */
 } CPSR_Type;
 
+/* CPSR Register Definitions */
+#define CPSR_N_Pos                       31U                                    /*!< CPSR: N Position */
+#define CPSR_N_Msk                       (1UL << CPSR_N_Pos)                    /*!< CPSR: N Mask */
 
-/* CP15的SCTLR寄存器 
- * 参考资料：Cortex-A7 Technical ReferenceManua.pdf P105
- */
+#define CPSR_Z_Pos                       30U                                    /*!< CPSR: Z Position */
+#define CPSR_Z_Msk                       (1UL << CPSR_Z_Pos)                    /*!< CPSR: Z Mask */
+
+#define CPSR_C_Pos                       29U                                    /*!< CPSR: C Position */
+#define CPSR_C_Msk                       (1UL << CPSR_C_Pos)                    /*!< CPSR: C Mask */
+
+#define CPSR_V_Pos                       28U                                    /*!< CPSR: V Position */
+#define CPSR_V_Msk                       (1UL << CPSR_V_Pos)                    /*!< CPSR: V Mask */
+
+#define CPSR_Q_Pos                       27U                                    /*!< CPSR: Q Position */
+#define CPSR_Q_Msk                       (1UL << CPSR_Q_Pos)                    /*!< CPSR: Q Mask */
+
+#define CPSR_IT0_Pos                     25U                                    /*!< CPSR: IT0 Position */
+#define CPSR_IT0_Msk                     (3UL << CPSR_IT0_Pos)                  /*!< CPSR: IT0 Mask */
+
+#define CPSR_J_Pos                       24U                                    /*!< CPSR: J Position */
+#define CPSR_J_Msk                       (1UL << CPSR_J_Pos)                    /*!< CPSR: J Mask */
+
+#define CPSR_GE_Pos                      16U                                    /*!< CPSR: GE Position */
+#define CPSR_GE_Msk                      (0xFUL << CPSR_GE_Pos)                 /*!< CPSR: GE Mask */
+
+#define CPSR_IT1_Pos                     10U                                    /*!< CPSR: IT1 Position */
+#define CPSR_IT1_Msk                     (0x3FUL << CPSR_IT1_Pos)               /*!< CPSR: IT1 Mask */
+
+#define CPSR_E_Pos                       9U                                     /*!< CPSR: E Position */
+#define CPSR_E_Msk                       (1UL << CPSR_E_Pos)                    /*!< CPSR: E Mask */
+
+#define CPSR_A_Pos                       8U                                     /*!< CPSR: A Position */
+#define CPSR_A_Msk                       (1UL << CPSR_A_Pos)                    /*!< CPSR: A Mask */
+
+#define CPSR_I_Pos                       7U                                     /*!< CPSR: I Position */
+#define CPSR_I_Msk                       (1UL << CPSR_I_Pos)                    /*!< CPSR: I Mask */
+
+#define CPSR_F_Pos                       6U                                     /*!< CPSR: F Position */
+#define CPSR_F_Msk                       (1UL << CPSR_F_Pos)                    /*!< CPSR: F Mask */
+
+#define CPSR_T_Pos                       5U                                     /*!< CPSR: T Position */
+#define CPSR_T_Msk                       (1UL << CPSR_T_Pos)                    /*!< CPSR: T Mask */
+
+#define CPSR_M_Pos                       0U                                     /*!< CPSR: M Position */
+#define CPSR_M_Msk                       (0x1FUL << CPSR_M_Pos)                 /*!< CPSR: M Mask */
+
+
+/* CP15 Register SCTLR */
 typedef union
 {
   struct
@@ -151,7 +324,6 @@ typedef union
   uint32_t w;                            /*!< Type      used for word access */
 } SCTLR_Type;
 
-/* CP15 寄存器SCTLR各个位定义 */
 #define SCTLR_TE_Pos                     30U                                    /*!< SCTLR: TE Position */
 #define SCTLR_TE_Msk                     (1UL << SCTLR_TE_Pos)                  /*!< SCTLR: TE Mask */
 
@@ -215,9 +387,7 @@ typedef union
 #define SCTLR_M_Pos                      0U                                     /*!< SCTLR: M Position */
 #define SCTLR_M_Msk                      (1UL << SCTLR_M_Pos)                   /*!< SCTLR: M Mask */
 
-/* CP15的ACTLR寄存器
- * 参考资料:Cortex-A7 Technical ReferenceManua.pdf P113
- */
+/* CP15 Register ACTLR */
 typedef union
 {
   struct
@@ -259,9 +429,7 @@ typedef union
 #define ACTLR_SMP_Msk                    (1UL << ACTLR_SMP_Pos)                  /*!< ACTLR: SMP Mask */
 
 
-/* CP15的CPACR寄存器
- * 参考资料：Cortex-A7 Technical ReferenceManua.pdf P115
- */
+/* CP15 Register CPACR */
 typedef union
 {
   struct
@@ -289,9 +457,7 @@ typedef union
 #define CPACR_cp10_Msk                   (3UL << CPACR_cp10_Pos)                /*!< CPACR: cp10 Mask */
 
 
-/* CP15的DFSR寄存器
- * 参考资料：Cortex-A7 Technical ReferenceManua.pdf P128
- */
+/* CP15 Register DFSR */
 typedef union
 {
   struct
@@ -327,9 +493,7 @@ typedef union
 #define DFSR_FS0_Msk                     (0xFUL << DFSR_FS0_Pos)                /*!< DFSR: FS0 Mask */
 
 
-/* CP15的IFSR寄存器 
- * 参考资料：Cortex-A7 Technical ReferenceManua.pdf P131
- */
+/* CP15 Register IFSR */
 typedef union
 {
   struct
@@ -354,9 +518,7 @@ typedef union
 #define IFSR_FS0_Msk                     (0xFUL << IFSR_FS0_Pos)                /*!< IFSR: FS0 Mask */
 
 
-/* CP15的ISR寄存器
- * 参考资料：ARM ArchitectureReference Manual ARMv7-A and ARMv7-R edition.pdf P1640
- */
+/* CP15 Register ISR */
 typedef union
 {
   struct
@@ -387,10 +549,10 @@ typedef union
 #define _FLD2VAL(field, value)    ((value & field ## _Msk) >> field ## _Pos)
 
 
-/*******************************************************************************
- *       			CP15 访问函数
- ******************************************************************************/
 
+/*******************************************************************************
+ *                 CP15 Access Functions
+ ******************************************************************************/
 FORCEDINLINE __STATIC_INLINE uint32_t __get_SCTLR(void)
 {
   return __MRC(15, 0, 1, 0, 0);
@@ -536,15 +698,513 @@ FORCEDINLINE __STATIC_INLINE uint32_t __get_CBAR(void)
   return __MRC(15, 4, 15, 0, 0);
 }
 
-/*******************************************************************************
- *                 GIC相关内容
- *有关GIC的内容，参考：ARM Generic Interrupt Controller(ARM GIC控制器)V2.0.pdf
- ******************************************************************************/
 
-/*
- * GIC寄存器描述结构体，
- * GIC分为分发器端和CPU接口端
- */
+/*******************************************************************************
+ *                 L1 Cache Functions
+ ******************************************************************************/
+#define L1C_INSTRUCTION_CACHE_LINE_SIZE          (32U)
+#define L1C_DATA_CACHE_LINE_SIZE                 (64U)
+
+#define L1C_DATA_CACHE_OP_CLEAN                  (1U)
+#define L1C_DATA_CACHE_OP_INVALIDATE             (2U)
+#define L1C_DATA_CACHE_OP_CLEAN_INVALIDATE       (3U)
+
+/* Invalidate both intruction cache and branch predictor */
+FORCEDINLINE __STATIC_INLINE void L1C_InvalidateInstructionCacheAll(void)
+{
+  /* ICIALLU only affects self core. */
+  __MCR(15, 0, 0, 7, 5, 0);
+  /* BPIALL only affects self core. */
+  __MCR(15, 0, 0, 7, 5, 6);
+  /* Ensure completion of the invalidation */
+  __DSB();
+  __ISB();
+}
+
+FORCEDINLINE __STATIC_INLINE void L1C_InvalidateInstructionCacheLine(const void *VirtAddr)
+{
+  uint32_t base = (uint32_t)VirtAddr & ~(L1C_INSTRUCTION_CACHE_LINE_SIZE - 1);
+  /* ICIMVAU */
+  __MCR(15, 0, base, 7, 5, 1);
+  /* BPIMVA */
+  __MCR(15, 0, base, 7, 5, 7);
+  /* Ensure completion of the invalidation */
+  __DSB();
+  __ISB();
+}
+
+FORCEDINLINE __STATIC_INLINE void L1C_InvalidateInstructionCacheRange(const void *VirtAddr, uint32_t length)
+{
+  uint32_t base = (uint32_t)VirtAddr & ~(L1C_INSTRUCTION_CACHE_LINE_SIZE - 1);
+  uint32_t end = (uint32_t)VirtAddr + length;
+
+  while (base < end)
+  {
+    /* ICIMVAU */
+    __MCR(15, 0, base, 7, 5, 1);
+    /* BPIMVA */
+    __MCR(15, 0, base, 7, 5, 7);
+    base += L1C_INSTRUCTION_CACHE_LINE_SIZE;
+  }
+
+  /* Ensure completion of the invalidation */
+  __DSB();
+  __ISB();
+}
+
+FORCEDINLINE __STATIC_INLINE void L1C_EnableInstructionCache(void)
+{
+  uint32_t sctlr = __get_SCTLR();
+
+  if ((sctlr & (SCTLR_I_Msk | SCTLR_Z_Msk)) != (SCTLR_I_Msk | SCTLR_Z_Msk))
+  { /* Enable cache and branch predictor */
+    L1C_InvalidateInstructionCacheAll();
+    sctlr |= SCTLR_I_Msk | SCTLR_Z_Msk;
+    __set_SCTLR(sctlr);
+    /* __ISB() is not needed as there's no instruction changes */
+  }
+}
+
+FORCEDINLINE __STATIC_INLINE void L1C_DisableInstructionCache(void)
+{
+  uint32_t sctlr = __get_SCTLR();
+
+  if ((sctlr & (SCTLR_I_Msk | SCTLR_Z_Msk)) != 0)
+  { /* Disable cache and branch predictor */
+    sctlr &= ~(SCTLR_I_Msk | SCTLR_Z_Msk);
+    __set_SCTLR(sctlr);
+    /* __ISB() is not needed as there's no instruction changes */
+  }
+}
+
+FORCEDINLINE __STATIC_INLINE void L1C_OpDataCacheAll(uint32_t operation)
+{
+  uint32_t clidr, loc, ctype;
+  uint32_t level;
+  uint32_t ccsidr, set, ass, setshift, assshift;
+  uint32_t i, j, reg;
+
+  clidr = __MRC(15, 1, 0, 0, 1);
+  loc = (clidr >> 24) & 0x7UL;
+
+  for (level = 0; level < loc; level++)
+  { /* Clean each level */
+    ctype = (clidr >> (level * 3)) & 0x7UL;
+    if (ctype == 2 || /* Data cache only */
+        ctype == 3 || /* Separate instruction and data caches */
+        ctype == 4)   /* Unified cache */
+    {
+      __MCR(15, 2, level << 1, 0, 0, 0); /* Select data cache */
+
+      ccsidr = __MRC(15, 1, 0, 0, 0); /* Get cache size ID */
+      set = ((ccsidr >> 13) & 0x7FFFUL) + 1;
+      ass = ((ccsidr >> 3) & 0x3FFUL) + 1;
+
+      setshift = (ccsidr & 0x7UL) + 2 + 2;
+      for (i = 1; i < 10 && ass > (1UL << i); i++)
+      {
+      }
+      assshift = 32 - i;
+
+      for (i = 0; i < ass; i++)
+      {
+        for (j = 0; j < set; j++)
+        {
+          reg = (i << assshift) | (j << setshift) | (level << 1);
+          switch (operation)
+          {
+            case L1C_DATA_CACHE_OP_CLEAN:
+              /* DCCSW */
+              __MCR(15, 0, reg, 7, 10, 2);
+              break;
+            case L1C_DATA_CACHE_OP_INVALIDATE:
+              /* DCISW */
+              __MCR(15, 0, reg, 7, 6, 2);
+              break;
+            case L1C_DATA_CACHE_OP_CLEAN_INVALIDATE:
+              /* DCCISW */
+              __MCR(15, 0, reg, 7, 14, 2);
+              break;
+            default:
+              break;
+          }
+        }
+      }
+      /* Ensure completion of the L1 cache operation */
+      __DSB();
+    }
+  }
+
+  /* Ensure completion of the cache operation */
+  __DSB();
+}
+
+/* Invalidate data cache */
+FORCEDINLINE __STATIC_INLINE void L1C_InvalidateDataCacheAll(void)
+{
+  L1C_OpDataCacheAll(L1C_DATA_CACHE_OP_INVALIDATE);
+}
+
+FORCEDINLINE __STATIC_INLINE void L1C_InvalidateDataCacheLine(const void *VirtAddr)
+{
+  uint32_t base = (uint32_t)VirtAddr & ~(L1C_DATA_CACHE_LINE_SIZE - 1);
+  /* DCIMVAC */
+  __MCR(15, 0, base, 7, 6, 1);
+  /* Ensure completion of the invalidation */
+  __DSB();
+}
+
+FORCEDINLINE __STATIC_INLINE void L1C_InvalidateDataCacheRange(const void *VirtAddr, uint32_t length)
+{
+  uint32_t base = (uint32_t)VirtAddr & ~(L1C_DATA_CACHE_LINE_SIZE - 1);
+  uint32_t end = (uint32_t)VirtAddr + length;
+
+  while (base < end)
+  {
+    /* DCIMVAC */
+    __MCR(15, 0, base, 7, 6, 1);
+    base += L1C_DATA_CACHE_LINE_SIZE;
+  }
+
+  /* Ensure completion of the invalidation */
+  __DSB();
+}
+
+/* Clean data cache */
+FORCEDINLINE __STATIC_INLINE void L1C_CleanDataCacheAll(void)
+{
+  L1C_OpDataCacheAll(L1C_DATA_CACHE_OP_CLEAN);
+}
+
+FORCEDINLINE __STATIC_INLINE void L1C_CleanDataCacheLine(const void *VirtAddr)
+{
+  uint32_t base = (uint32_t)VirtAddr & ~(L1C_DATA_CACHE_LINE_SIZE - 1);
+  /* DCCMVAC */
+  __MCR(15, 0, base, 7, 10, 1);
+  /* Ensure completion of the clean */
+  __DSB();
+}
+
+FORCEDINLINE __STATIC_INLINE void L1C_CleanDataCacheRange(const void *VirtAddr, uint32_t length)
+{
+  uint32_t base = (uint32_t)VirtAddr & ~(L1C_DATA_CACHE_LINE_SIZE - 1);
+  uint32_t end = (uint32_t)VirtAddr + length;
+
+  while (base < end)
+  {
+    /* DCCMVAC */
+    __MCR(15, 0, base, 7, 10, 1);
+    base += L1C_DATA_CACHE_LINE_SIZE;
+  }
+
+  /* Ensure completion of the clean */
+  __DSB();
+}
+
+/* Clean and invalidate data cache */
+FORCEDINLINE __STATIC_INLINE void L1C_CleanInvalidateDataCacheAll(void)
+{
+  L1C_OpDataCacheAll(L1C_DATA_CACHE_OP_CLEAN_INVALIDATE);
+}
+
+FORCEDINLINE __STATIC_INLINE void L1C_CleanInvalidateDataCacheLine(const void *VirtAddr)
+{
+  uint32_t base = (uint32_t)VirtAddr & ~(L1C_DATA_CACHE_LINE_SIZE - 1);
+  /* DCCIMVAC */
+  __MCR(15, 0, base, 7, 14, 1);
+  /* Ensure completion of the clean */
+  __DSB();
+}
+
+FORCEDINLINE __STATIC_INLINE void L1C_CleanInvalidateDataCacheRange(const void *VirtAddr, uint32_t length)
+{
+  uint32_t base = (uint32_t)VirtAddr & ~(L1C_DATA_CACHE_LINE_SIZE - 1);
+  uint32_t end = (uint32_t)VirtAddr + length;
+
+  while (base < end)
+  {
+    /* DCCIMVAC */
+    __MCR(15, 0, base, 7, 14, 1);
+    base += L1C_DATA_CACHE_LINE_SIZE;
+  }
+
+  /* Ensure completion of the clean */
+  __DSB();
+}
+
+FORCEDINLINE __STATIC_INLINE void L1C_EnableDataCache(void)
+{
+  uint32_t sctlr = __get_SCTLR();
+
+  if ((sctlr & SCTLR_C_Msk) != SCTLR_C_Msk)
+  { /* Enable cache */
+    L1C_InvalidateDataCacheAll();
+    sctlr |= SCTLR_C_Msk;
+    __set_SCTLR(sctlr);
+    /* __ISB() is not needed as there's no instruction changes */
+  }
+}
+
+FORCEDINLINE __STATIC_INLINE void L1C_DisableDataCache(void)
+{
+  uint32_t sctlr = __get_SCTLR();
+
+  if ((sctlr & SCTLR_C_Msk) != 0)
+  { /* Disable cache */
+    sctlr &= ~SCTLR_C_Msk;
+    __set_SCTLR(sctlr);
+    L1C_CleanInvalidateDataCacheAll();
+    /* __ISB() is not needed as there's no instruction changes */
+  }
+}
+
+/*******************************************************************************
+ *                 MMU Functions
+ ******************************************************************************/
+enum _mmu_memory_type
+{
+  MMU_MemoryStronglyOrdered               = 0U,   /*!< TEX: 0, C: 0, B: 0 */
+  MMU_MemoryDevice                        = 1U,   /*!< TEX: 0, C: 0, B: 1 */
+  MMU_MemoryWriteBackNoWriteAllocate      = 3U,   /*!< TEX: 0, C: 1, B: 1 */
+  MMU_MemoryNonCacheable                  = 4U,   /*!< TEX: 1, C: 0, B: 0 */
+  MMU_MemoryWriteBackWriteAllocate        = 7U,   /*!< TEX: 1, C: 1, B: 1 */
+};
+
+enum _mmu_domain_access
+{
+  MMU_DomainNA                            = 0U,   /*!< No acces. Any access to the domain generates a Domain fault */
+  MMU_DomainClient                        = 1U,   /*!< Accesses are checked against the permission bits in the translation tables */
+  MMU_DomainManager                       = 3U,   /*!< Accesses are not checked against the permission bits in the translation tables */
+};
+
+enum _mmu_access_permission
+{
+  MMU_AccessNANA                          = 0U,   /*!< No access in both privileged and unprivileged modes */
+  MMU_AccessRWNA                          = 1U,   /*!< Read/Write in privileged mode, no access in unprivileged mode */
+  MMU_AccessRWRO                          = 2U,   /*!< Read/Write in privileged mode, Read Only in unprivileged mode */
+  MMU_AccessRWRW                          = 3U,   /*!< Read/Write in privileged mode, Read/Write in unprivileged mode */
+  MMU_AccessRONA                          = 5U,   /*!< Read Only in privileged mode, no access in unprivileged mode */
+  MMU_AccessRORO                          = 7U,   /*!< Read Only in privileged mode, Read Only in unprivileged mode */
+};
+
+typedef struct _mmu_attribute_t
+{
+  uint8_t  type;           /*!< memory type, see _mmu_memory_type */
+  uint8_t  domain;         /*!< memory domain assignment */
+  uint8_t  accessPerm;     /*!< the memory region access permission, see _mmu_access_permission */
+  uint8_t  shareable:1;    /*!< memory region is shareable among multiple cores or system master */
+  uint8_t  notSecure:1;    /*!< translated physical address is in non-secure memory map */
+  uint8_t  notGlob:1;      /*!< the region translation is process specific */
+  uint8_t  notExec:1;      /*!< the memory region cannot execute code */
+} mmu_attribute_t;
+
+/* L1Table must be 16KB aligned (bit [13:0] all 0) with size 16KB */
+FORCEDINLINE __STATIC_INLINE void MMU_Init(uint32_t *L1Table)
+{
+  uint32_t L1Base = (uint32_t)L1Table;
+
+  /* Use TTBR translation, with 16KB L1Table size (N=0) */
+  __set_TTBCR(0);
+
+  /* Set TTBR0 with inner/outer write back write allocate and not shareable, [4:3]=01, [1]=0, [6,0]=01 */
+  __set_TTBR0((L1Base & 0xFFFFC000UL) | 0x9UL);
+
+  /* Set all domains to client */
+  __set_DACR(0x55555555UL);
+
+  /* Set PROCID and ASID to 0 */
+  __MCR(15, 0, 0, 13, 0, 1);
+
+  /* Set all virtual space to invalid */
+  memset(L1Table, 0, 4096*4);
+}
+
+/* L1Table[4096], L2Table[256] */
+/* L2Table == NULL: use L1Table entry */
+FORCEDINLINE __STATIC_INLINE void MMU_ConfigPage(uint32_t *L1Table, uint32_t *L2Table, const void *VirtAddr,
+                                    uint32_t PhysAddr, const mmu_attribute_t *Attr)
+{
+  uint32_t index1 = (uint32_t)VirtAddr >> 20;
+  uint32_t index2 = ((uint32_t)VirtAddr >> 12) & 0xFFUL;
+  uint32_t descriptor1 = L1Table[index1];
+  uint32_t descriptor2 = (PhysAddr & 0xFFFFF000UL)           |     /* Physical address */
+                         (Attr->notGlob ? (1UL << 11) : 0)   |     /* nG */
+                         (Attr->shareable ? (1UL << 10) : 0) |     /* S */
+                         (Attr->notExec ? 1UL : 0)           |     /* XN */
+                         (((Attr->type >> 2) & 7UL) << 6)    |     /* TEX */
+                         ((Attr->type & 3UL) << 2)           |     /* C,B */
+                         ((Attr->accessPerm & 4UL) << 9)     |     /* AP[2] */
+                         ((Attr->accessPerm & 3UL) << 4)     |     /* AP[1:0] */
+                         2UL;                                      /* Small Page */
+
+  if ((descriptor1 & 3UL) == 1)  /* Page table first level already exists */
+  {
+    /* Ignore the parameter and use the descriptor */
+    L2Table = (uint32_t *)(descriptor1 & 0xFFFFFC00UL);
+    L2Table[index2] = descriptor2;
+  }
+  else if ((descriptor1 & 3UL) == 0) /* No L2 table available */
+  {
+    L1Table[index1] = ((uint32_t)L2Table & 0xFFFFFC00UL)     |     /* L2 Table address */
+                      ((Attr->domain & 15UL) << 5)           |     /* Domain */
+                      (Attr->notSecure ? (1UL << 3) : 0)     |     /* NS */
+                      1UL;                                         /* Page Table */
+    /* Use L2Table in parameter */
+    L2Table[index2] = descriptor2;
+  }
+}
+
+/* L1Table[4096], L2Table[256] */
+FORCEDINLINE __STATIC_INLINE void MMU_ConfigLargePage(uint32_t *L1Table, uint32_t *L2Table, const void *VirtAddr,
+                                         uint32_t PhysAddr, const mmu_attribute_t *Attr)
+{
+  uint32_t i;
+  uint32_t index1 = (uint32_t)VirtAddr >> 20;
+  uint32_t index2 = ((uint32_t)VirtAddr >> 12) & 0xF0UL;
+  uint32_t descriptor1 = L1Table[index1];
+  uint32_t descriptor2 = (PhysAddr & 0xFFFF0000UL)           |     /* Physical address */
+                         (Attr->notGlob ? (1UL << 11) : 0)   |     /* nG */
+                         (Attr->shareable ? (1UL << 10) : 0) |     /* S */
+                         (Attr->notExec ? (1UL << 15) : 0)   |     /* XN */
+                         (((Attr->type >> 2) & 7UL) << 12)   |     /* TEX */
+                         ((Attr->type & 3UL) << 2)           |     /* C,B */
+                         ((Attr->accessPerm & 4UL) << 9)     |     /* AP[2] */
+                         ((Attr->accessPerm & 3UL) << 4)     |     /* AP[1:0] */
+                         1UL;                                      /* Large Page */
+
+  if ((descriptor1 & 3UL) == 1)  /* Page table first level already exists */
+  {
+    /* Ignore the parameter and use the descriptor */
+    L2Table = (uint32_t *)(descriptor1 & 0xFFFFFC00UL);
+    for (i = 0; i < 16; i++)
+      L2Table[index2 + i] = descriptor2;
+  }
+  else if ((descriptor1 & 3UL) == 0) /* No L2 table available */
+  {
+    L1Table[index1] = ((uint32_t)L2Table & 0xFFFFFC00UL)     |     /* L2 Table address */
+                      ((Attr->domain & 15UL) << 5)           |     /* Domain */
+                      (Attr->notSecure ? (1UL << 3) : 0)     |     /* NS */
+                      1UL;                                         /* Page Table */
+    /* Use L2Table in parameter */
+    for (i = 0; i < 16; i++)
+      L2Table[index2 + i] = descriptor2;
+  }
+}
+
+/* L1Table[4096] */
+FORCEDINLINE __STATIC_INLINE void MMU_ConfigSection(uint32_t *L1Table, const void *VirtAddr,
+                                       uint32_t PhysAddr, const mmu_attribute_t *Attr)
+{
+  uint32_t index = (uint32_t)VirtAddr >> 20;
+  uint32_t descriptor = (PhysAddr & 0xFFF00000UL)           |     /* Physical address */
+                        (Attr->notSecure ? (1UL << 19) : 0) |     /* NS */
+                        (Attr->notGlob ? (1UL << 17) : 0)   |     /* nG */
+                        (Attr->shareable ? (1UL << 16) : 0) |     /* S */
+                        (Attr->notExec ? (1UL << 4) : 0)    |     /* XN */
+                        (((Attr->type >> 2) & 7UL) << 12)   |     /* TEX */
+                        ((Attr->type & 3UL) << 2)           |     /* C,B */
+                        ((Attr->domain & 15UL) << 5)        |     /* Domain */
+                        ((Attr->accessPerm & 4UL) << 15)    |     /* AP[2] */
+                        ((Attr->accessPerm & 3UL) << 10)    |     /* AP[1:0] */
+                        2UL;                                      /* Section */
+
+  L1Table[index] = descriptor;
+}
+
+/* L1Table[4096] */
+FORCEDINLINE __STATIC_INLINE void MMU_ConfigSuperSection(uint32_t *L1Table, const void *VirtAddr,
+                                            uint32_t PhysAddr, const mmu_attribute_t *Attr)
+{
+  uint32_t i;
+  uint32_t index = ((uint32_t)VirtAddr >> 20) & 0xFF0UL;
+  uint32_t descriptor = (PhysAddr & 0xFF000000UL)           |     /* Physical address */
+                        (Attr->notSecure ? (1UL << 19) : 0) |     /* NS */
+                        (Attr->notGlob ? (1UL << 17) : 0)   |     /* nG */
+                        (Attr->shareable ? (1UL << 16) : 0) |     /* S */
+                        (Attr->notExec ? (1UL << 4) : 0)    |     /* XN */
+                        (((Attr->type >> 2) & 7UL) << 12)   |     /* TEX */
+                        ((Attr->type & 3UL) << 2)           |     /* C,B */
+                                                                /* Supersection has fixed domain 0 */
+                        ((Attr->accessPerm & 4UL) << 15)    |     /* AP[2] */
+                        ((Attr->accessPerm & 3UL) << 10)    |     /* AP[1:0] */
+                        2;                                      /* Section */
+
+  for (i = 0; i < 16; i++)
+    L1Table[index + i] = descriptor;
+}
+
+FORCEDINLINE __STATIC_INLINE uint32_t * MMU_GetL1Table(void)
+{
+  return (uint32_t *)(__get_TTBR0() & 0xFFFFC000UL);
+}
+
+FORCEDINLINE __STATIC_INLINE void MMU_SetL1Table(uint32_t *L1Table)
+{
+  /* update L1Table base address without changing other attributes */
+  __set_TTBR0(((uint32_t)L1Table & 0xFFFFC000UL) | (__get_TTBR0() & 0x3FFFUL));
+}
+
+FORCEDINLINE __STATIC_INLINE uint32_t * MMU_GetL2Table(const void *VirtAddr)
+{
+  uint32_t index1 = (uint32_t)VirtAddr >> 20;
+  uint32_t descriptor1;
+  uint32_t *L1Table = MMU_GetL1Table();
+  uint32_t *L2Table = NULL;
+
+  descriptor1 = L1Table[index1];
+  if ((descriptor1 & 3UL) == 1)  /* Page */
+    L2Table = (uint32_t *)(descriptor1 & 0xFFFFFC00UL);
+
+  return L2Table;
+}
+
+FORCEDINLINE __STATIC_INLINE void MMU_SetContext(uint32_t procid, uint32_t asid)
+{
+  uint32_t reg = (procid << 8) | (asid & 0xFFUL);
+
+  __MCR(15, 0, reg, 13, 0, 1);
+}
+
+/* access: _mmu_domain_access */
+FORCEDINLINE __STATIC_INLINE void MMU_ConfigDomain(uint32_t domain, uint32_t access)
+{
+  uint32_t dacr = __get_DACR();
+  uint32_t mask = 3UL << ((domain & 0xFUL) * 2);
+  uint32_t reg = (dacr & ~mask) | ((access & 3) << ((domain & 0xFUL) * 2));
+
+  __set_DACR(reg);
+}
+
+FORCEDINLINE __STATIC_INLINE void MMU_InvalidateTLB(void)
+{
+  /* TLBIALL only affects self core */
+  __MCR(15, 0, 0, 8, 7, 0);
+  __DSB();
+  __ISB();
+}
+
+FORCEDINLINE __STATIC_INLINE void MMU_Disable(void)
+{
+  uint32_t sctlr = __get_SCTLR();
+
+  sctlr &= ~SCTLR_M_Msk;
+  __set_SCTLR(sctlr);
+  __ISB();
+}
+
+FORCEDINLINE __STATIC_INLINE void MMU_Enable(void)
+{
+  uint32_t sctlr = __get_SCTLR();
+
+  MMU_InvalidateTLB();
+  sctlr |= SCTLR_M_Msk;
+  __set_SCTLR(sctlr);
+  __ISB();
+}
+
+/*******************************************************************************
+ *                 GIC Functions
+ ******************************************************************************/
 typedef struct
 {
         uint32_t RESERVED0[1024];
@@ -615,10 +1275,7 @@ typedef struct
 } GIC_Type;
 
 
-/* 
- * GIC初始化
- * 为了简单使用GIC的group0
- */
+/* For simplicity, we only use group0 of GIC */
 FORCEDINLINE __STATIC_INLINE void GIC_Init(void)
 {
   uint32_t i;
@@ -646,64 +1303,50 @@ FORCEDINLINE __STATIC_INLINE void GIC_Init(void)
   gic->C_CTLR = 1UL;
 }
 
-/*  
- * 使能指定的中断
- */
 FORCEDINLINE __STATIC_INLINE void GIC_EnableIRQ(IRQn_Type IRQn)
 {
-  	GIC_Type *gic = (GIC_Type *)(__get_CBAR() & 0xFFFF0000UL);
-  	gic->D_ISENABLER[((uint32_t)(int32_t)IRQn) >> 5] = (uint32_t)(1UL << (((uint32_t)(int32_t)IRQn) & 0x1FUL));
-}
+  GIC_Type *gic = (GIC_Type *)(__get_CBAR() & 0xFFFF0000UL);
 
-/*  
- * 关闭指定的中断
- */
+  gic->D_ISENABLER[((uint32_t)(int32_t)IRQn) >> 5] = (uint32_t)(1UL << (((uint32_t)(int32_t)IRQn) & 0x1FUL));
+}
 
 FORCEDINLINE __STATIC_INLINE void GIC_DisableIRQ(IRQn_Type IRQn)
 {
-  	GIC_Type *gic = (GIC_Type *)(__get_CBAR() & 0xFFFF0000UL);
-  	gic->D_ICENABLER[((uint32_t)(int32_t)IRQn) >> 5] = (uint32_t)(1UL << (((uint32_t)(int32_t)IRQn) & 0x1FUL));
+  GIC_Type *gic = (GIC_Type *)(__get_CBAR() & 0xFFFF0000UL);
+
+  gic->D_ICENABLER[((uint32_t)(int32_t)IRQn) >> 5] = (uint32_t)(1UL << (((uint32_t)(int32_t)IRQn) & 0x1FUL));
 }
 
-/* 
- * 返回中断号 
- */
+/* Return IRQ number (and CPU source in SGI case) */
 FORCEDINLINE __STATIC_INLINE uint32_t GIC_AcknowledgeIRQ(void)
 {
-  	GIC_Type *gic = (GIC_Type *)(__get_CBAR() & 0xFFFF0000UL);
-  	return gic->C_IAR & 0x1FFFUL;
+  GIC_Type *gic = (GIC_Type *)(__get_CBAR() & 0xFFFF0000UL);
+
+  return gic->C_IAR & 0x1FFFUL;
 }
 
-/* 
- * 向EOIR写入发送中断的中断号来释放中断
- */
+/* value should be got from GIC_AcknowledgeIRQ() */
 FORCEDINLINE __STATIC_INLINE void GIC_DeactivateIRQ(uint32_t value)
 {
-  	GIC_Type *gic = (GIC_Type *)(__get_CBAR() & 0xFFFF0000UL);
-  	gic->C_EOIR = value;
+  GIC_Type *gic = (GIC_Type *)(__get_CBAR() & 0xFFFF0000UL);
+
+  gic->C_EOIR = value;
 }
 
-/*
- * 获取运行优先级
- */
 FORCEDINLINE __STATIC_INLINE uint32_t GIC_GetRunningPriority(void)
 {
-  	GIC_Type *gic = (GIC_Type *)(__get_CBAR() & 0xFFFF0000UL);
-  	return gic->C_RPR & 0xFFUL;
+  GIC_Type *gic = (GIC_Type *)(__get_CBAR() & 0xFFFF0000UL);
+
+  return gic->C_RPR & 0xFFUL;
 }
 
-/*
- * 设置组优先级
- */
 FORCEDINLINE __STATIC_INLINE void GIC_SetPriorityGrouping(uint32_t PriorityGroup)
 {
-  	GIC_Type *gic = (GIC_Type *)(__get_CBAR() & 0xFFFF0000UL);
-  	gic->C_BPR = PriorityGroup & 0x7UL;
+  GIC_Type *gic = (GIC_Type *)(__get_CBAR() & 0xFFFF0000UL);
+
+  gic->C_BPR = PriorityGroup & 0x7UL;
 }
 
-/*
- * 获取组优先级
- */
 FORCEDINLINE __STATIC_INLINE uint32_t GIC_GetPriorityGrouping(void)
 {
   GIC_Type *gic = (GIC_Type *)(__get_CBAR() & 0xFFFF0000UL);
@@ -711,23 +1354,24 @@ FORCEDINLINE __STATIC_INLINE uint32_t GIC_GetPriorityGrouping(void)
   return gic->C_BPR & 0x7UL;
 }
 
-/*
- * 设置优先级
- */
 FORCEDINLINE __STATIC_INLINE void GIC_SetPriority(IRQn_Type IRQn, uint32_t priority)
 {
-  	GIC_Type *gic = (GIC_Type *)(__get_CBAR() & 0xFFFF0000UL);
-  	gic->D_IPRIORITYR[((uint32_t)(int32_t)IRQn)] = (uint8_t)((priority << (8UL - __GIC_PRIO_BITS)) & (uint32_t)0xFFUL);
+  GIC_Type *gic = (GIC_Type *)(__get_CBAR() & 0xFFFF0000UL);
+
+  gic->D_IPRIORITYR[((uint32_t)(int32_t)IRQn)] = (uint8_t)((priority << (8UL - __GIC_PRIO_BITS)) & (uint32_t)0xFFUL);
 }
 
-/*
- * 获取优先级
- */
 FORCEDINLINE __STATIC_INLINE uint32_t GIC_GetPriority(IRQn_Type IRQn)
 {
   GIC_Type *gic = (GIC_Type *)(__get_CBAR() & 0xFFFF0000UL);
+
   return(((uint32_t)gic->D_IPRIORITYR[((uint32_t)(int32_t)IRQn)] >> (8UL - __GIC_PRIO_BITS)));
 }
 
+#ifdef __cplusplus
+}
+#endif
 
-#endif 
+#endif /* __CORE_CA7_H_DEPENDANT */
+
+#endif /* __CMSIS_GENERIC */

@@ -1,21 +1,15 @@
-/**************************************************************
-Copyright © zuozhongkai Co., Ltd. 1998-2019. All rights reserved.
-文件名	: 	 fsl_iomuxc.h
-作者	   : 左忠凯修改NXP官方SDK
-版本	   : V1.0
-描述	   : NXP官方SDK的寄存器结构体和相关位定义文档
-其他	   : NXP官方SDK的寄存器结构体和相关位定义文档，默认基于IAR的，
-		 由左忠凯移植到Liux下。
-论坛 	   : www.openedv.com
-日志	   : 初版V1.0 2019/1/4 左忠凯移植
-**************************************************************/
-
+/**********************************************************************
+ * FilePath: 
+ * Author: 
+ * Date: 
+ * Version: 
+ * Brief: 
+ * Note: 
+ * Remarks: 
+ **********************************************************************/
 
 #ifndef _MCIMX6Y2_H_
 #define _MCIMX6Y2_H_                             /**< Symbol preventing repeated inclusion */
-
-#include "cc.h"			/* cc.h为自行添加的文件 */
-// #include "core_ca7.h"
 
 
 /** Memory map major version (memory maps with equal major version number are
@@ -215,6 +209,7 @@ typedef enum IRQn {
 #define __GIC_PRIO_BITS                5         /**< Number of Bits used for Priority Levels */
 #define __FPU_PRESENT                  1         /**< FPU present or not */
 
+#include "core_ca7.h"
 
 /*!
  * @}
