@@ -3,6 +3,7 @@
 
 CPU 型号：MC IMX6 Y 2 C VM 08 AB
 - Y：6ULL
+- 2: General Purpose 2
 - C：-40 to +105
 - VM：14X14mm
 - 08：792MHz

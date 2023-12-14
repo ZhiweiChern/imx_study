@@ -5,8 +5,9 @@ ARCH_PATH := armv7
 MANUFACT := nxp_repo
 SOC_FAMILY := imx6y2
 BOARD_NAME := yz_alpha
+CPUDIR := soc/armv7
 
-export ARCH_PATH MANUFACT SOC_FAMILY BOARD_NAME
+export ARCH_PATH MANUFACT SOC_FAMILY BOARD_NAME CPUDIR
 
 
 # Beautify output
@@ -179,7 +180,7 @@ NOSTDINC_FLAGS += -nostdinc -nostdlib -isystem $(SYSROOT_INC) -isystem $(shell $
 
 # PLATFORM_CPPFLAGS 这个是为不同平台准备的接口，不同的平台可以差异化编译选项
 cpp_flags := $(KBUILD_CPPFLAGS) $(PLATFORM_CPPFLAGS) $(RTBOOTINCLUDE) \
-							$(NOSTDINC_FLAGS)
+			$(NOSTDINC_FLAGS)
 
 c_flags := $(KBUILD_CFLAGS) $(cpp_flags)
 
@@ -200,6 +201,9 @@ rt-boot-alldirs := $(sort $(rt-boot-dirs) $(patsubst %/,%,$(filter %/, $(libs-))
 libs-y := $(patsubst %/, %/built-in.o, $(libs-y))
 rt-boot-main := $(libs-y)
 
+# kbuild 并不会为 head-y 生成规则
+# 此处声明 head-y 只是为了在最后链接时，把这个 .o 链接进去
+# 但是，实际上，已经在链接脚本里指定 start.o 的位置了，所以带不带这句话，并不影响最终的 .bin
 head-y := soc/$(ARCH_PATH)/start.o
 rt-boot-init := $(head-y)
 
@@ -209,6 +213,13 @@ PLATFORM_LIBS += $(PLATFORM_LIBGCC)
 
 export PLATFORM_LIBS
 export PLATFORM_LIBGCC
+
+# Special flags for CPP when processing the linker script.
+# Pass the version down so we can handle backwards compatibility
+# on the fly.
+LDPPFLAGS := -DCPUDIR=$(CPUDIR)
+#	$(shell $(LD) --version | 
+#	  sed -ne 's/GNU ld version \([0-9][0-9]*\)\.\([0-9][0-9]*\).*/-DLD_MAJOR=\1 -DLD_MINOR=\2/p')
 
 #============================================================
 ALL-y :=
@@ -251,8 +262,14 @@ rt-boot: $(rt-boot-init) $(rt-boot-main) rt-boot.lds FORCE
 #	$(call cmd,u-boot__) common/system_map.o
 #	$(LD) $(LDFLAGS) --print-sysroot
 
-rt-boot.lds: FORCE
-	cp soc/$(ARCH_PATH)/$(MANUFACT)/$(SOC_FAMILY)/rt-boot.lds ./
+quiet_cmd_cpp_lds ?= LDS     $@
+	  cmd_cpp_lds ?= $(CPP) -Wp,-MD,$(depfile) $(cpp_flags) $(LDPPFLAGS) \
+	  	-D__ASSEMBLY__ -x assembler-with-cpp -std=c99 -P -o $@ $<
+
+LDSCRIPT := soc/$(ARCH_PATH)/$(MANUFACT)/$(SOC_FAMILY)/rt-boot.lds
+
+rt-boot.lds: $(LDSCRIPT) prepare
+	$(call if_changed_dep,cpp_lds)
 
 $(sort $(rt-boot-init) $(rt-boot-main)): $(rt-boot-dirs)
 	@:
@@ -260,8 +277,11 @@ $(sort $(rt-boot-init) $(rt-boot-main)): $(rt-boot-dirs)
 $(rt-boot-dirs): tools_basic
 	$(Q)$(MAKE) $(build)=$@
 
-$(head-dirs): tools_basic
-	$(Q)$(MAKE) $(build)=$@
+# $(head-dirs): tools_basic
+# 	$(Q)$(MAKE) $(build)=$@
+
+prepare: tools_basic
+	@:
 
 # Basic helpers built in scripts/
 PHONY += tools_basic

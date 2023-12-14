@@ -23,7 +23,7 @@ SECTIONS{
     {
         . = ALIGN(4);
         __VECTOR_TABLE = .;
-        soc/armv7/start.o
+        CPUDIR/start.o
         *(.text)                 /* .text sections (code) */
         *(.text*)                /* .text* sections (code) */
         *(.rodata)               /* .rodata sections (constants, strings, etc.) */
