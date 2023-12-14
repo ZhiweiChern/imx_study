@@ -7,7 +7,7 @@
  * Note: 
  * Remarks: 
  **********************************************************************/
-
+#if 0
 #include "fsl_iomuxc.h"
 #include "fsl_gpio.h"
 #include "MCIMX6Y2.h"
@@ -44,7 +44,7 @@ int pins_iomux_init(void)
 
 gpio_pin_config_t led0_config = {
     kGPIO_DigitalOutput,
-    0,  // 0 is led on
+    1,  // 0 is led on
     kGPIO_NoIntmode,
 };
 
@@ -93,5 +93,6 @@ static void key0_irqhandler(void)
     led0_state = !led0_state;
     led0_ctrl(led0_state);
 }
+#endif
 
 /******************** end of file ********************/

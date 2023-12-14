@@ -1,3 +1,4 @@
 
-obj-y += fsl_clock.o
-obj-y += fsl_gpio.o
+obj-y += bsp_int.o
+obj-y += bsp_clk.o
+obj-y += bsp_led.o

@@ -73,10 +73,10 @@ Reset_Handler:
     orr r0, r0, #0x13 	/* r0或上0x13,表示使用SVC模式					*/
     msr cpsr, r0		/* 将r0 的数据写入到cpsr_c中 					*/
     ldr sp, =0x80200000	/* 设置SVC模式下的栈首地址为0X80200000,大小为2MB */
-
+/*
     ldr     r0,=SystemInit
     blx     r0
-
+*/
     cpsie i				/* 打开全局中断 */
 
     b main				/* 跳转到main函数 			 	*/
@@ -133,7 +133,7 @@ IRQ_Handler:
     cps #0x13					/* 进入SVC模式，允许其他中断再次进去 */
 	
 	push {lr}					/* 保存SVC模式的lr寄存器 */
-	ldr r2, =SystemIrqHandler	/* 加载C语言中断处理函数到r2寄存器中*/
+	ldr r2, =system_irqhandler	/* 加载C语言中断处理函数到r2寄存器中*/
 	blx r2						/* 运行C语言中断处理函数，带有一个参数，保存在R0寄存器中 */
 
 	pop {lr}					/* 执行完C语言中断服务函数，lr出栈 */

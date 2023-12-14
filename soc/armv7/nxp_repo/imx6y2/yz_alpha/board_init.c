@@ -9,42 +9,33 @@
  **********************************************************************/
 
 #include "gpio.h"
-#if 0
-#include "mem_config.h"
-#endif
-#include "clock_config.h"
-#include "MCIMX6Y2.h"
-
+#include "bsp_clk.h"
+#include "bsp_int.h"
+#include "bsp_led.h"
 
 static void delay(void);
 
 
 int board_init(void)
 {
-    pins_iomux_init();
-    BOARD_BootClockRUN();
+    int_init();
+    imx6u_clkinit();
+    clk_enable();
+    led_init();
 
-#if 0
-    BOARD_InitMemory();
-    BOARD_InitDebugConsole();
-#endif
+    delay();
+    led_switch(LED0, OFF);
 
-    SystemInitIrqTable();
-    gpio_init();
-
-    while(1) {
-        delay();
-    }
-
-    return 0;
+    return 1;
 }
 
 static void delay(void)
 {
     volatile uint32_t i = 0;
-    for (i = 0; i < 1000000; ++i)
+    for (i = 0; i < 5000000; ++i)
     {
-        __NOP(); /* delay */
+        // __NOP(); /* delay */
+        __ASM volatile ("nop");
     }
 }
 
