@@ -8,35 +8,34 @@
  * Remarks: 
  **********************************************************************/
 
-#include "gpio.h"
-#if 0
-#include "mem_config.h"
-#endif
-#include "clock_config.h"
-#include "MCIMX6Y2.h"
-
+#include "bsp_clk.h"
+#include "bsp_int.h"
+#include "bsp_led.h"
+#include "bsp_exit.h"
+#include "bsp_key.h"
 
 static void delay(void);
 
+unsigned char state = 0;
 
 int board_init(void)
 {
-    pins_iomux_init();
-    BOARD_BootClockRUN();
+    int active = 1;
 
-#if 0
-    BOARD_InitMemory();
-    BOARD_InitDebugConsole();
-#endif
+    int_init();
+    imx6u_clkinit();
+    clk_enable();
+    led_init();
+    key_init();
+    exit_init();
 
-    SystemInitIrqTable();
-    gpio_init();
-
-    while(1) {
+    while (active) {
         delay();
+        state = !state;
+        led_switch(LED0, state);
     }
 
-    return 0;
+    return 1;
 }
 
 static void delay(void)

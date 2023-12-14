@@ -305,7 +305,7 @@ quiet_cmd_rmfiles = $(if $(wildcard $(rm-files)),CLEAN   $(wildcard $(rm-files))
 
 # Directories & files removed with 'make clean'
 CLEAN_DIRS  :=
-CLEAN_FILES := rt-boot rt-boot.bin rt-boot.lds rt-boot.map
+CLEAN_FILES := rt-boot rt-boot.bin rt-boot.lds rt-boot.map load.imx
 
 # Directories & files removed with 'make mrproper'
 MRPROPER_DIRS  :=
